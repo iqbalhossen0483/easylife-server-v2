@@ -10,6 +10,6 @@ import { AuthModule } from './modules/auth/auth.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiValidationPipe).forRoutes('/api');
+    consumer.apply(ApiValidationPipe).forRoutes('*');
   }
 }

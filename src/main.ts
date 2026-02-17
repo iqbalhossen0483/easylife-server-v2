@@ -19,7 +19,7 @@ async function bootstrap() {
     credentials: true,
   });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.useLogger(isProd ? ['error'] : false);
+  app.useLogger(isProd ? ['error'] : ['log', 'error']);
   app.use(helmet());
 
   await app.listen(parseInt(port), () => {

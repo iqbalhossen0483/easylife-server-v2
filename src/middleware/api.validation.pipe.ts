@@ -14,7 +14,7 @@ export class ApiValidationPipe implements NestMiddleware {
       throw new UnauthorizedException('Missing tenant context');
     }
 
-    req['tenant'] = { id: tenantId, schema: `tenant_${tenantId}` };
+    req['tenant'] = tenantId;
 
     next();
   }
