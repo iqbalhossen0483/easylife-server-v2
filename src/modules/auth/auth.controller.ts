@@ -8,12 +8,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(@Body() payload: LoginDto) {
-    return this.authService.login(payload);
-  }
-
-  @Post('create-user')
-  createUser(@Req() req: Request) {
-    return this.authService.createUser(req['tenant'] as string);
+  login(@Body() payload: LoginDto, @Req() req: Request) {
+    return this.authService.login(payload, req.tenantId);
   }
 }

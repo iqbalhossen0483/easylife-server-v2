@@ -14,7 +14,11 @@ export class ApiValidationPipe implements NestMiddleware {
       throw new UnauthorizedException('Missing tenant context');
     }
 
-    req['tenant'] = tenantId;
+    req.tenantId = Number(tenantId);
+
+    if (isNaN(req.tenantId) || req.tenantId <= 0) {
+      throw new UnauthorizedException('Missing tenant context');
+    }
 
     next();
   }

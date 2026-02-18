@@ -1,30 +1,62 @@
+import {
+  Inject,
+  Injectable,
+  Scope,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { REQUEST } from '@nestjs/core';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DbListEntity } from 'src/entites/dbList.entity';
 import { UserEntity } from 'src/entites/user.entity';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
 
-const tenantDataSources = new Map<string, DataSource>();
+@Injectable({ scope: Scope.REQUEST })
+export class TenantDatabaseService {
+  private tenantDataSources = new Map<string, DataSource>();
 
-export async function getTenantDataSource(
-  dbName: string,
-  configService: ConfigService,
-): Promise<DataSource> {
-  if (tenantDataSources.has(dbName)) {
-    return tenantDataSources.get(dbName)!;
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(REQUEST) private readonly request: Request & { tenantId: number },
+    @InjectRepository(DbListEntity)
+    private readonly dbListRepo: Repository<DbListEntity>,
+  ) {}
+
+  private async getDataSource(): Promise<DataSource> {
+    const database = await this.dbListRepo.findOne({
+      where: { id: this.request.tenantId },
+    });
+
+    if (!database) {
+      throw new UnauthorizedException('Authentication failed');
+    }
+    const dbName = database.name;
+
+    if (this.tenantDataSources.has(dbName)) {
+      return this.tenantDataSources.get(dbName)!;
+    }
+
+    const dataSource = new DataSource({
+      type: 'postgres',
+      host: this.configService.get<string>('DB_HOST'),
+      port: this.configService.get<number>('DB_PORT'),
+      username: this.configService.get<string>('DB_USERNAME'),
+      password: this.configService.get<string>('DB_PASS'),
+      database: dbName,
+      entities: [UserEntity],
+      synchronize: true,
+    });
+
+    await dataSource.initialize();
+    this.tenantDataSources.set(dbName, dataSource);
+
+    return dataSource;
   }
 
-  const dataSource = new DataSource({
-    type: 'postgres',
-    host: configService.get('DB_HOST'),
-    port: configService.get('DB_PORT'),
-    username: configService.get('DB_USERNAME'),
-    password: configService.get('DB_PASS'),
-    database: dbName,
-    entities: [UserEntity],
-    synchronize: true,
-  });
-
-  await dataSource.initialize();
-  tenantDataSources.set(dbName, dataSource);
-
-  return dataSource;
+  async getRepository<T extends ObjectLiteral>(
+    entity: EntityTarget<T>,
+  ): Promise<Repository<T>> {
+    const dataSource = await this.getDataSource();
+    return dataSource.getRepository<T>(entity);
+  }
 }

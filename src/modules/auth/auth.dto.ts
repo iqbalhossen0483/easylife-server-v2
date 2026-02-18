@@ -1,11 +1,4 @@
-import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  Length,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, Length } from 'class-validator';
 import { Designation } from 'src/entites/user.entity';
 
 export class LoginDto {
@@ -14,11 +7,6 @@ export class LoginDto {
 
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
-
-  @IsNotEmpty({ message: 'Database code is required ' })
-  @Type(() => Number)
-  @IsNumber({ allowNaN: false }, { message: 'Database code must be a number' })
-  db: number;
 }
 
 export class CreateUserDto {
