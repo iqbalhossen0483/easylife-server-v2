@@ -27,7 +27,7 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 11 })
   phone: string;
 
-  @Column({ type: 'varchar', length: 20 })
+  @Column({ type: 'text' })
   password: string;
 
   @Column({ type: 'enum', enum: Designation })
@@ -60,7 +60,7 @@ export class UserEntity {
   @Column({ default: 0 })
   debt: number;
 
-  @Column({ type: 'varchar', length: 50, default: null })
+  @Column({ type: 'text', default: null })
   pushToken: string;
 
   @CreateDateColumn()
