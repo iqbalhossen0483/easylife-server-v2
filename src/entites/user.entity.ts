@@ -8,9 +8,9 @@ import {
 } from 'typeorm';
 
 export enum Designation {
-  SALES_MAN = 'Sales Man',
-  ADMIN = 'Admin',
-  STORE_MANAGER = 'Store Manager',
+  SALES_MAN = 'sales_man',
+  ADMIN = 'admin',
+  STORE_MANAGER = 'store_manager',
 }
 
 @Entity('users')

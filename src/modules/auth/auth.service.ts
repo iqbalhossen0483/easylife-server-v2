@@ -53,7 +53,6 @@ export class AuthService {
 
     const { password: _, ...rest } = user;
 
-    // 5. set cookies
     res.cookie('token', token, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
