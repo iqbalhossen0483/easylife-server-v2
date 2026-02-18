@@ -1,6 +1,7 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { AllExceptionFilter } from './middleware/exception.filter';
@@ -39,6 +40,7 @@ async function bootstrap() {
   app.useGlobalFilters(new AllExceptionFilter());
   app.useLogger(isProd ? ['error'] : ['log', 'error']);
   app.use(helmet());
+  app.use(cookieParser());
 
   await app.listen(parseInt(port), () => {
     console.log(`Server is running on http://localhost:${port}`);

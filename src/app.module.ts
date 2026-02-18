@@ -3,9 +3,10 @@ import { AppConfigModule } from './configs/env.config.module';
 import { DatabaseModule } from './database/root.database.module';
 import { ApiValidationPipe } from './middleware/api.validation.pipe';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [AppConfigModule, DatabaseModule, AuthModule],
+  imports: [AppConfigModule, DatabaseModule, AuthModule, UsersModule],
   providers: [],
 })
 export class AppModule implements NestModule {
