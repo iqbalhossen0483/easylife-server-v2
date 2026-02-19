@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
@@ -23,5 +32,12 @@ export class UsersController {
   @Get('/all')
   async getAll(@Query() payload: getAllUserDto) {
     return this.usersService.getAllUser(payload);
+  }
+
+  @UseGuards(RoleGaurd)
+  @Role(Designation.ADMIN)
+  @Get('/single-user/:id')
+  async getSingle(@Param('id', ParseIntPipe) id: number) {
+    return this.usersService.getSingleUser(id);
   }
 }

@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
@@ -89,6 +93,31 @@ export class UsersService {
       message: 'Users fetched successfully',
       data: users,
       meta,
+    };
+  }
+
+  async getSingleUser(userId: number) {
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+    const user = await userRepo.findOne({
+      where: { id: userId },
+      relations: { createdBy: true },
+      select: {
+        createdBy: {
+          id: true,
+          name: true,
+        },
+      },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const { password, ...rest } = user;
+
+    return {
+      success: true,
+      message: 'User fetched successfully',
+      data: rest,
     };
   }
 }
