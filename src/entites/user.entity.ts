@@ -4,6 +4,7 @@ import {
   DeleteDateColumn,
   Entity,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -35,9 +36,15 @@ export class UserEntity {
   @Column({ type: 'enum', enum: Designation })
   designation: Designation;
 
-  @OneToMany(() => UserEntity, (user) => user.id)
+  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
   @JoinColumn({ name: 'createdBy' })
-  createdBy?: UserEntity;
+  createdBy: UserEntity | null;
+
+  @OneToMany(() => UserEntity, (user) => user.createdBy)
+  createdUsers: UserEntity[];
 
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;

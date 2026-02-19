@@ -1,22 +1,14 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { Response } from 'express';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
 import { FindOptionsWhere } from 'typeorm';
-import { AuthService } from '../auth/auth.service';
 import { CreateUserDto } from './user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private readonly tenantDatabaseService: TenantDatabaseService,
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly tenantDatabaseService: TenantDatabaseService) {}
 
   private async getUser(condition: FindOptionsWhere<UserEntity>) {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
@@ -30,7 +22,6 @@ export class UsersService {
   }
 
   async createUser(payload: CreateUserDto, res: Response) {
-    const tenantId = this.tenantDatabaseService.getTenantId();
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
 
     const user = await this.getUser({ phone: payload.phone });
@@ -39,9 +30,6 @@ export class UsersService {
     }
 
     const currentUser = await this.getUser({ id: currentUserId });
-    if (!currentUser) {
-      throw new NotFoundException('User not found');
-    }
 
     const hashPassword = this.hasPass(payload.password);
     payload.password = hashPassword;
@@ -49,19 +37,12 @@ export class UsersService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const newUser = userRepo.create({ ...payload, createdBy: currentUser });
     await userRepo.save(newUser);
-    const { password: _, ...rest } = newUser;
-
-    const token = this.authService.generateToken(newUser, tenantId);
-
-    this.authService.setCookies(res, token);
+    const { password, createdBy, ...rest } = newUser;
 
     return {
       success: true,
       message: 'User created successfully',
-      data: {
-        token,
-        user: rest,
-      },
+      data: rest,
     };
   }
 }
