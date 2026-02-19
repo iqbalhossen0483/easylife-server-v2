@@ -11,7 +11,7 @@ import { JWT_Payload } from 'src/types/common';
 @Injectable()
 export class AuthGaurd implements CanActivate {
   constructor(private readonly jwtService: JwtService) {}
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
     const authorization = request.headers.authorization ?? '';
     const token: string =
@@ -22,7 +22,7 @@ export class AuthGaurd implements CanActivate {
     }
 
     try {
-      const user = this.jwtService.verify<JWT_Payload>(token);
+      const user = await this.jwtService.verifyAsync<JWT_Payload>(token);
       request.user = user;
       request.tenantId = user.tenantId;
       return true;

@@ -1,13 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import type { Request, Response } from 'express';
+import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import type { Response } from 'express';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { LoginDto } from './auth.dto';
 import { AuthService } from './auth.service';
@@ -17,12 +9,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('login')
-  login(
-    @Body() payload: LoginDto,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return this.authService.login(payload, req.tenantId, res);
+  login(@Body() payload: LoginDto, @Res({ passthrough: true }) res: Response) {
+    return this.authService.login(payload, res);
   }
 
   @UseGuards(AuthGaurd)
@@ -33,7 +21,7 @@ export class AuthController {
 
   @UseGuards(AuthGaurd)
   @Get('get-profile')
-  getProfile(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    return this.authService.getProfile(res, req.user.sub, req.tenantId);
+  getProfile(@Res({ passthrough: true }) res: Response) {
+    return this.authService.getProfile(res);
   }
 }

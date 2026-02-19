@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcryptjs';
 import type { Response } from 'express';
-import { CommonService } from 'src/common/common.service';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
 import { JWT_Payload } from 'src/types/common';
@@ -13,13 +12,12 @@ import { LoginDto } from './auth.dto';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly commonService: CommonService,
     private readonly jwtService: JwtService,
     private readonly tenantDatabaseService: TenantDatabaseService,
     private readonly configService: ConfigService,
   ) {}
 
-  private generateToken(user: UserEntity, tenantId: number) {
+  generateToken(user: UserEntity, tenantId: number) {
     const token = this.jwtService.sign<JWT_Payload>({
       sub: user.id,
       tenantId: tenantId,
@@ -29,7 +27,7 @@ export class AuthService {
     return token;
   }
 
-  private setCookies(res: Response, token: string) {
+  setCookies(res: Response, token: string) {
     res.cookie('token', token, {
       httpOnly: true,
       secure: this.configService.get('NODE_ENV') === 'production',
@@ -49,11 +47,12 @@ export class AuthService {
     return user;
   }
 
-  async login(payload: LoginDto, dbId: number, res: Response) {
+  async login(payload: LoginDto, res: Response) {
     const { password, phone } = payload;
 
     // 1. Check database exists in master DB
-    const database = await this.commonService.getDataDatabase(dbId);
+    const database = await this.tenantDatabaseService.getDataDatabase();
+    const tenantId = this.tenantDatabaseService.getTenantId();
 
     // 2. Query tenant DB
     const user = await this.getUser({ phone });
@@ -66,7 +65,7 @@ export class AuthService {
     const { password: _, ...rest } = user;
 
     // 4. Issue JWT with tenant info embedded
-    const token = this.generateToken(user, dbId);
+    const token = this.generateToken(user, tenantId);
 
     // 5. Set cookie
     this.setCookies(res, token);
@@ -90,10 +89,12 @@ export class AuthService {
     };
   }
 
-  async getProfile(res: Response, userId: number, tenantId: number) {
-    const database = await this.commonService.getDataDatabase(tenantId);
+  async getProfile(res: Response) {
+    const database = await this.tenantDatabaseService.getDataDatabase();
+    const tenantId = this.tenantDatabaseService.getTenantId();
+    const currentUserId = this.tenantDatabaseService.getCurrentUserId();
 
-    const user = await this.getUser({ id: userId });
+    const user = await this.getUser({ id: currentUserId });
     const { password: _, ...rest } = user;
 
     const token = this.generateToken(user, tenantId);

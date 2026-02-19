@@ -3,6 +3,8 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  JoinColumn,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -33,23 +35,27 @@ export class UserEntity {
   @Column({ type: 'enum', enum: Designation })
   designation: Designation;
 
+  @OneToMany(() => UserEntity, (user) => user.id)
+  @JoinColumn({ name: 'createdBy' })
+  createdBy?: UserEntity;
+
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;
 
   @Column({ default: 0 })
-  delivered_order?: number;
+  deliveredOrder?: number;
 
   @Column({ default: 0 })
-  total_sale: number;
+  totalSale: number;
 
   @Column({ default: 0 })
-  due_sale: number;
+  dueSale: number;
 
   @Column({ default: 0 })
-  due_collection: number;
+  dueCollection: number;
 
   @Column({ default: 0 })
-  get_salary: number;
+  getSalary: number;
 
   @Column({ default: 0 })
   incentive: number;

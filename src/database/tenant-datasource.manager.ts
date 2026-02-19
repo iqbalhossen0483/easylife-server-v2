@@ -9,6 +9,7 @@ import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DbListEntity } from 'src/entites/dbList.entity';
 import { UserEntity } from 'src/entites/user.entity';
+import { JWT_Payload } from 'src/types/common';
 import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
 
 @Injectable({ scope: Scope.REQUEST })
@@ -17,7 +18,8 @@ export class TenantDatabaseService {
 
   constructor(
     private readonly configService: ConfigService,
-    @Inject(REQUEST) private readonly request: Request & { tenantId: number },
+    @Inject(REQUEST)
+    private readonly request: Request & { tenantId: number; user: JWT_Payload },
     @InjectRepository(DbListEntity)
     private readonly dbListRepo: Repository<DbListEntity>,
   ) {}
@@ -58,5 +60,24 @@ export class TenantDatabaseService {
   ): Promise<Repository<T>> {
     const dataSource = await this.getDataSource();
     return dataSource.getRepository<T>(entity);
+  }
+
+  async getDataDatabase() {
+    const database = await this.dbListRepo.findOne({
+      where: { id: this.request.tenantId },
+    });
+    if (!database) {
+      throw new UnauthorizedException('No organization found');
+    }
+
+    return database;
+  }
+
+  getTenantId() {
+    return this.request.tenantId;
+  }
+
+  getCurrentUserId() {
+    return this.request.user?.sub;
   }
 }

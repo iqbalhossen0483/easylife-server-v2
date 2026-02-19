@@ -13,6 +13,8 @@ export class AllExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const status = exception.getStatus?.() ?? 500;
 
+    console.log(exception);
+
     response.status(status).json({
       success: false,
       statusCode: status,
