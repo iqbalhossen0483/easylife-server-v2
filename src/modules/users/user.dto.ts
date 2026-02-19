@@ -1,4 +1,11 @@
-import { IsEnum, IsNotEmpty, IsOptional, Length } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Length,
+} from 'class-validator';
 import { Designation } from 'src/entites/user.entity';
 
 export class CreateUserDto {
@@ -49,4 +56,19 @@ export class UpdateUserDto {
 
   @IsOptional()
   profile?: string;
+}
+
+export class getAllUserDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Page must be a number' })
+  page: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Limit must be a number' })
+  limit: number;
+
+  @IsOptional()
+  search: string;
 }

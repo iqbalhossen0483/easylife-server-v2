@@ -1,10 +1,9 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
-import type { Response } from 'express';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
-import { CreateUserDto } from './user.dto';
+import { CreateUserDto, getAllUserDto } from './user.dto';
 import { UsersService } from './users.service';
 
 @UseGuards(AuthGaurd)
@@ -15,10 +14,14 @@ export class UsersController {
   @UseGuards(RoleGaurd)
   @Role(Designation.ADMIN)
   @Post('/create')
-  async create(
-    @Body() payload: CreateUserDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    return this.usersService.createUser(payload, res);
+  async create(@Body() payload: CreateUserDto) {
+    return this.usersService.createUser(payload);
+  }
+
+  @UseGuards(RoleGaurd)
+  @Role(Designation.ADMIN)
+  @Get('/all')
+  async getAll(@Body() payload: getAllUserDto) {
+    return this.usersService.getAllUser(payload);
   }
 }

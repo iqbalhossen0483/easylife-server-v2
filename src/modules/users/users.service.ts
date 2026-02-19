@@ -1,10 +1,9 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { Response } from 'express';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
-import { FindOptionsWhere } from 'typeorm';
-import { CreateUserDto } from './user.dto';
+import { FindOptionsWhere, ILike } from 'typeorm';
+import { CreateUserDto, getAllUserDto } from './user.dto';
 
 @Injectable()
 export class UsersService {
@@ -17,11 +16,11 @@ export class UsersService {
     return user;
   }
 
-  private hasPass(password: string): string {
+  private hashPass(password: string): string {
     return bcrypt.hashSync(password, 10);
   }
 
-  async createUser(payload: CreateUserDto, res: Response) {
+  async createUser(payload: CreateUserDto) {
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
 
     const user = await this.getUser({ phone: payload.phone });
@@ -31,7 +30,7 @@ export class UsersService {
 
     const currentUser = await this.getUser({ id: currentUserId });
 
-    const hashPassword = this.hasPass(payload.password);
+    const hashPassword = this.hashPass(payload.password);
     payload.password = hashPassword;
 
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
@@ -43,6 +42,38 @@ export class UsersService {
       success: true,
       message: 'User created successfully',
       data: rest,
+    };
+  }
+
+  async getAllUser({ page = 1, limit = 10, search }: getAllUserDto) {
+    const skip = (page - 1) * limit;
+    const query: FindOptionsWhere<UserEntity>[] = [];
+    if (search) {
+      query.push({ name: ILike(`%${search}%`) });
+      query.push({ phone: ILike(`%${search}%`) });
+    }
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+    const users = await userRepo.find({
+      where: query,
+      take: limit,
+      skip,
+    });
+
+    const total = await userRepo.count({
+      where: query,
+    });
+
+    const meta = {
+      total,
+      limit,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    };
+    return {
+      success: true,
+      message: 'Users fetched successfully',
+      data: users,
+      meta,
     };
   }
 }
