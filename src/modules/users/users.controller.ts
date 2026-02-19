@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
@@ -21,7 +21,7 @@ export class UsersController {
   @UseGuards(RoleGaurd)
   @Role(Designation.ADMIN)
   @Get('/all')
-  async getAll(@Body() payload: getAllUserDto) {
+  async getAll(@Query() payload: getAllUserDto) {
     return this.usersService.getAllUser(payload);
   }
 }

@@ -3,6 +3,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -27,6 +28,7 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 50 })
   address: string;
 
+  @Index('IDX_USER_PHONE', { unique: true })
   @Column({ type: 'varchar', length: 11 })
   phone: string;
 

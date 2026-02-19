@@ -47,6 +47,7 @@ export class UsersService {
 
   async getAllUser({ page = 1, limit = 10, search }: getAllUserDto) {
     const skip = (page - 1) * limit;
+
     const query: FindOptionsWhere<UserEntity>[] = [];
     if (search) {
       query.push({ name: ILike(`%${search}%`) });
@@ -55,6 +56,20 @@ export class UsersService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const users = await userRepo.find({
       where: query,
+      relations: { createdBy: true },
+      select: {
+        id: true,
+        phone: true,
+        name: true,
+        address: true,
+        designation: true,
+        createdAt: true,
+        createdBy: {
+          id: true,
+          name: true,
+        },
+      },
+      order: { createdAt: 'DESC' },
       take: limit,
       skip,
     });
