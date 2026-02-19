@@ -155,4 +155,23 @@ export class UsersService {
       message: 'User updated successfully',
     };
   }
+
+  async softDeleteUser(userId: number) {
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const deletedUserResult = await userRepo.softDelete({ id: userId });
+
+    if (deletedUserResult.affected === 0) {
+      throw new NotImplementedException('Something went wrong');
+    }
+
+    return {
+      success: true,
+      message: 'User deleted successfully',
+    };
+  }
 }
