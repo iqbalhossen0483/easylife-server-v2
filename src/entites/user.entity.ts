@@ -5,6 +5,7 @@ import {
   Entity,
   Index,
   JoinColumn,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -38,7 +39,7 @@ export class UserEntity {
   @Column({ type: 'enum', enum: Designation })
   designation: Designation;
 
-  @OneToMany(() => UserEntity, (user) => user.createdUsers, {
+  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
     nullable: true,
     onDelete: 'SET NULL',
   })
