@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  NotImplementedException,
 } from '@nestjs/common';
 import moment from 'moment';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
@@ -201,6 +202,62 @@ export class TargetCommisionService {
       message: 'Targets fetched successfully',
       data: targets,
       meta,
+    };
+  }
+
+  async getSingleTarget(targetCommissionId: number) {
+    const targetRepo =
+      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+
+    const target = await targetRepo.findOne({
+      where: { id: targetCommissionId },
+      relations: { user: true, createdBy: true },
+      select: {
+        user: {
+          id: true,
+          name: true,
+          phone: true,
+        },
+        createdBy: {
+          id: true,
+          name: true,
+          phone: true,
+        },
+      },
+    });
+    if (!target) {
+      throw new NotFoundException('Target not found');
+    }
+
+    return {
+      success: true,
+      message: 'Target fetched successfully',
+      data: target,
+    };
+  }
+
+  async softDeleteTarget(targetCommissionId: number) {
+    const targetRepo =
+      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+
+    const target = await targetRepo.findOne({
+      where: { id: targetCommissionId },
+    });
+    if (!target) {
+      throw new NotFoundException('Target not found');
+    }
+
+    const deletedTargetResult = await targetRepo.softDelete({
+      id: targetCommissionId,
+    });
+
+    if (deletedTargetResult.affected === 0) {
+      throw new NotImplementedException('Something went wrong');
+    }
+
+    return {
+      success: true,
+      message: 'Target deleted successfully',
     };
   }
 }

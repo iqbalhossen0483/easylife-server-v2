@@ -78,4 +78,14 @@ export class UsersController {
   async getAllTargets(@Query() payload: GetUserCommissionTargetDto) {
     return this.targetCommisionService.getAllTargets(payload);
   }
+
+  @Get('/target/single/:id')
+  async getSingleTarget(@Param('id', ParseIntPipe) id: number) {
+    return this.targetCommisionService.getSingleTarget(id);
+  }
+
+  @Delete('/target/delete/:id')
+  async deleteTarget(@Param('id', ParseIntPipe) id: number) {
+    return this.targetCommisionService.softDeleteTarget(id);
+  }
 }
