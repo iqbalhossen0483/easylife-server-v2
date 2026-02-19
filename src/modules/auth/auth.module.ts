@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CommonService } from 'src/common/common.service';
 import { JWTConfigModule } from 'src/configs/jwt.config.module';
 import { TenantDatabaseModule } from 'src/database/tenant.database.module';
 import { DbListEntity } from 'src/entites/dbList.entity';
@@ -13,6 +14,6 @@ import { AuthService } from './auth.service';
     TenantDatabaseModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, CommonService],
 })
 export class AuthModule {}

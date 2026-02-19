@@ -1,21 +1,19 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
 import bcrypt from 'bcryptjs';
 import type { Response } from 'express';
+import { CommonService } from 'src/common/common.service';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { DbListEntity } from 'src/entites/dbList.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { JWT_Payload } from 'src/types/common';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere } from 'typeorm';
 import { LoginDto } from './auth.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(DbListEntity)
-    private readonly dbListRepo: Repository<DbListEntity>,
+    private readonly commonService: CommonService,
     private readonly jwtService: JwtService,
     private readonly tenantDatabaseService: TenantDatabaseService,
     private readonly configService: ConfigService,
@@ -40,15 +38,6 @@ export class AuthService {
     });
   }
 
-  private async getDataDatabase(tenantId: number) {
-    const database = await this.dbListRepo.findOne({ where: { id: tenantId } });
-    if (!database) {
-      throw new UnauthorizedException('Authentication failed');
-    }
-
-    return database;
-  }
-
   private async getUser(condition: FindOptionsWhere<UserEntity>) {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const user = await userRepo.findOne({ where: condition });
@@ -64,7 +53,7 @@ export class AuthService {
     const { password, phone } = payload;
 
     // 1. Check database exists in master DB
-    const database = await this.getDataDatabase(dbId);
+    const database = await this.commonService.getDataDatabase(dbId);
 
     // 2. Query tenant DB
     const user = await this.getUser({ phone });
@@ -102,7 +91,7 @@ export class AuthService {
   }
 
   async getProfile(res: Response, userId: number, tenantId: number) {
-    const database = await this.getDataDatabase(tenantId);
+    const database = await this.commonService.getDataDatabase(tenantId);
 
     const user = await this.getUser({ id: userId });
     const { password: _, ...rest } = user;
