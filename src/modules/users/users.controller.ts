@@ -6,6 +6,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ import {
   CreateUserCommissionTargetDto,
   CreateUserDto,
   getAllUserDto,
+  UpdateUserCommissionTargetDto,
   UpdateUserDto,
 } from './user.dto';
 import { UsersService } from './users.service';
@@ -42,7 +44,7 @@ export class UsersController {
     return this.usersService.getSingleUser(id);
   }
 
-  @Post('/update/:id')
+  @Put('/update/:id')
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: UpdateUserDto,
@@ -58,5 +60,13 @@ export class UsersController {
   @Post('/give-target')
   async giveTarget(@Body() payload: CreateUserCommissionTargetDto) {
     return this.usersService.giveUserTarget(payload);
+  }
+
+  @Put('/update-target/:id')
+  async updateTarget(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() payload: UpdateUserCommissionTargetDto,
+  ) {
+    return this.usersService.updateUserCommissionTarget(id, payload);
   }
 }

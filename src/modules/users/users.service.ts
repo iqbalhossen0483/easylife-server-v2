@@ -18,6 +18,7 @@ import {
   CreateUserCommissionTargetDto,
   CreateUserDto,
   getAllUserDto,
+  UpdateUserCommissionTargetDto,
   UpdateUserDto,
 } from './user.dto';
 
@@ -241,6 +242,64 @@ export class UsersService {
       success: true,
       message: 'Target created successfully',
       data: rest,
+    };
+  }
+
+  async updateUserCommissionTarget(
+    targetCommissionId: number,
+    payload: UpdateUserCommissionTargetDto,
+  ) {
+    const targetRepo =
+      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+
+    const target = await targetRepo.findOne({
+      where: { id: targetCommissionId },
+    });
+    if (!target) {
+      throw new NotFoundException('Target not found');
+    }
+    if (target.status === CommissionStatus.ACHIVED) {
+      throw new BadRequestException('Target already achived');
+    }
+    if (target.status === CommissionStatus.FAILED) {
+      throw new BadRequestException('Target already failed');
+    }
+
+    let startDate = moment(target.startDate, 'YYYY-MM-DD');
+    let endDate = moment(target.endDate, 'YYYY-MM-DD');
+
+    if (payload.startDate) {
+      startDate = moment(payload.startDate, 'YYYY-MM-DD');
+      if (startDate.isAfter(endDate)) {
+        throw new BadRequestException('Start date must be before end date');
+      }
+    }
+    if (payload.endDate) {
+      endDate = moment(payload.endDate, 'YYYY-MM-DD');
+      if (startDate.isAfter(endDate)) {
+        throw new BadRequestException('Start date must be before end date');
+      }
+    }
+
+    const targetedAmnt = payload.targetedAmnt ?? target.targetedAmnt;
+    const commissionPercentage =
+      payload.commissionPercentage ?? target.commissionPercentage;
+    if (payload.targetedAmnt || payload.commissionPercentage) {
+      const commissionAmount = targetedAmnt * commissionPercentage;
+      target.commissionAmount = commissionAmount;
+    }
+
+    target.startDate = startDate.toDate();
+    target.endDate = endDate.endOf('day').toDate();
+    target.targetedAmnt = targetedAmnt;
+    target.commissionPercentage = commissionPercentage;
+
+    await targetRepo.save(target);
+
+    return {
+      success: true,
+      message: 'Target updated successfully',
+      data: target,
     };
   }
 }
