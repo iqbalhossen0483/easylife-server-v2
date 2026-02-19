@@ -16,3 +16,10 @@ declare module 'express-serve-static-core' {
     }
   }
 }
+
+type API_Meta = {
+  total: number;
+  limit: number;
+  currentPage: number;
+  totalPages: number;
+};

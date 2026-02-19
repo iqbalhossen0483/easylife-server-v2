@@ -14,20 +14,23 @@ import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
+import { TargetCommisionService } from './targetCommision.service';
 import {
   CreateUserCommissionTargetDto,
-  CreateUserDto,
-  getAllUserDto,
+  GetUserCommissionTargetDto,
   UpdateUserCommissionTargetDto,
-  UpdateUserDto,
-} from './user.dto';
+} from './targetCommission.dto';
+import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
 import { UsersService } from './users.service';
 
 @UseGuards(AuthGaurd, RoleGaurd)
 @Role(Designation.ADMIN)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly targetCommisionService: TargetCommisionService,
+  ) {}
 
   @Post('/create')
   async create(@Body() payload: CreateUserDto) {
@@ -57,16 +60,22 @@ export class UsersController {
     return this.usersService.softDeleteUser(id);
   }
 
-  @Post('/give-target')
+  // -------------------------------------- target ------------------------------------------------
+  @Post('/target/create')
   async giveTarget(@Body() payload: CreateUserCommissionTargetDto) {
-    return this.usersService.giveUserTarget(payload);
+    return this.targetCommisionService.createUserTarget(payload);
   }
 
-  @Put('/update-target/:id')
+  @Put('/target/update/:id')
   async updateTarget(
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: UpdateUserCommissionTargetDto,
   ) {
-    return this.usersService.updateUserCommissionTarget(id, payload);
+    return this.targetCommisionService.updateUserCommissionTarget(id, payload);
+  }
+
+  @Get('/target/all')
+  async getAllTargets(@Query() payload: GetUserCommissionTargetDto) {
+    return this.targetCommisionService.getAllTargets(payload);
   }
 }
