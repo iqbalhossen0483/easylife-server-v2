@@ -2,12 +2,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  NotImplementedException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
 import { FindOptionsWhere, ILike } from 'typeorm';
-import { CreateUserDto, getAllUserDto } from './user.dto';
+import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
 
 @Injectable()
 export class UsersService {
@@ -118,6 +119,40 @@ export class UsersService {
       success: true,
       message: 'User fetched successfully',
       data: rest,
+    };
+  }
+
+  async updateUser(userId: number, payload: UpdateUserDto) {
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+    const user = await userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (payload.phone) {
+      const user = await this.getUser({ phone: payload.phone });
+      if (user) {
+        throw new ConflictException('User already exists');
+      }
+    }
+
+    if (payload.password) {
+      const hashPassword = this.hashPass(payload.password);
+      payload.password = hashPassword;
+    }
+
+    const updatedUserResult = await userRepo.update(
+      { id: userId },
+      Object.assign(user, payload),
+    );
+
+    if (updatedUserResult.affected === 0) {
+      throw new NotImplementedException('Something went wrong');
+    }
+
+    return {
+      success: true,
+      message: 'User updated successfully',
     };
   }
 }
