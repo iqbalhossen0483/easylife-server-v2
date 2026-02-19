@@ -5,11 +5,11 @@ import {
   Entity,
   Index,
   JoinColumn,
-  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserCommissionTarget } from './UserCommissionTarget.entity';
 
 export enum Designation {
   SALES_MAN = 'sales_man',
@@ -38,7 +38,7 @@ export class UserEntity {
   @Column({ type: 'enum', enum: Designation })
   designation: Designation;
 
-  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
+  @OneToMany(() => UserEntity, (user) => user.createdUsers, {
     nullable: true,
     onDelete: 'SET NULL',
   })
@@ -47,6 +47,9 @@ export class UserEntity {
 
   @OneToMany(() => UserEntity, (user) => user.createdBy)
   createdUsers: UserEntity[];
+
+  @OneToMany(() => UserCommissionTarget, (target) => target.user)
+  targets: UserCommissionTarget[];
 
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;

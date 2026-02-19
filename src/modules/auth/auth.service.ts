@@ -50,24 +50,19 @@ export class AuthService {
   async login(payload: LoginDto, res: Response) {
     const { password, phone } = payload;
 
-    // 1. Check database exists in master DB
     const database = await this.tenantDatabaseService.getDataDatabase();
     const tenantId = this.tenantDatabaseService.getTenantId();
 
-    // 2. Query tenant DB
     const user = await this.getUser({ phone });
 
-    // 3. Check password
     const isValid = await bcrypt.compare(password, user.password);
     if (!isValid) {
       throw new UnauthorizedException('Authentication failed');
     }
     const { password: _, ...rest } = user;
 
-    // 4. Issue JWT with tenant info embedded
     const token = this.generateToken(user, tenantId);
 
-    // 5. Set cookie
     this.setCookies(res, token);
 
     return {

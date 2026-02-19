@@ -13,7 +13,12 @@ import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
-import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
+import {
+  CreateUserCommissionTargetDto,
+  CreateUserDto,
+  getAllUserDto,
+  UpdateUserDto,
+} from './user.dto';
 import { UsersService } from './users.service';
 
 @UseGuards(AuthGaurd, RoleGaurd)
@@ -48,5 +53,10 @@ export class UsersController {
   @Delete('/delete/:id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.softDeleteUser(id);
+  }
+
+  @Post('/give-target')
+  async giveTarget(@Body() payload: CreateUserCommissionTargetDto) {
+    return this.usersService.giveUserTarget(payload);
   }
 }

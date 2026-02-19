@@ -1,14 +1,25 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import moment from 'moment';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
-import { FindOptionsWhere, ILike } from 'typeorm';
-import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
+import {
+  CommissionStatus,
+  UserCommissionTarget,
+} from 'src/entites/UserCommissionTarget.entity';
+import { FindOptionsWhere, ILike, In } from 'typeorm';
+import {
+  CreateUserCommissionTargetDto,
+  CreateUserDto,
+  getAllUserDto,
+  UpdateUserDto,
+} from './user.dto';
 
 @Injectable()
 export class UsersService {
@@ -172,6 +183,64 @@ export class UsersService {
     return {
       success: true,
       message: 'User deleted successfully',
+    };
+  }
+
+  async giveUserTarget(payload: CreateUserCommissionTargetDto) {
+    const currentUserId = this.tenantDatabaseService.getCurrentUserId();
+    const targetRepo =
+      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+
+    const user = await this.getUser({ id: payload.userId });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const currentUser = await this.getUser({ id: currentUserId });
+    if (!currentUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // check is user already has a pending or running target
+    const isExist = await targetRepo.findOne({
+      where: {
+        user: { id: payload.userId },
+        status: In([CommissionStatus.PENDING, CommissionStatus.RUNNING]),
+      },
+    });
+
+    if (isExist) {
+      throw new ConflictException(
+        'User already has a pending or running target',
+      );
+    }
+
+    const startDate = moment(payload.startDate, 'YYYY-MM-DD');
+    const endDate = moment(payload.endDate, 'YYYY-MM-DD');
+
+    if (startDate.isAfter(endDate)) {
+      throw new BadRequestException('Start date must be before end date');
+    }
+
+    payload.startDate = startDate.toDate();
+    payload.endDate = endDate.endOf('day').toDate();
+    const target = targetRepo.create(payload);
+
+    const commissionAmount =
+      payload.targetedAmnt * payload.commissionPercentage;
+    target.commissionAmount = commissionAmount;
+
+    target.user = user;
+    target.createdBy = currentUser;
+
+    await targetRepo.save(target);
+
+    const { user: _, createdBy, ...rest } = target;
+
+    return {
+      success: true,
+      message: 'Target created successfully',
+      data: rest,
     };
   }
 }
