@@ -89,7 +89,23 @@ export class AuthService {
     const tenantId = this.tenantDatabaseService.getTenantId();
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
 
-    const user = await this.getUser({ id: currentUserId });
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+    const user = await userRepo.findOne({
+      where: { id: currentUserId },
+      relations: { createdBy: true, targets: true, notes: true },
+      select: {
+        createdBy: {
+          id: true,
+          name: true,
+          phone: true,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('Authentication failed');
+    }
+
     const { password: _, ...rest } = user;
 
     const token = this.generateToken(user, tenantId);
