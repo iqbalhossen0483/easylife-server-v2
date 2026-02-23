@@ -14,14 +14,14 @@ import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
-import { TargetCommisionService } from './targetCommision.service';
 import {
   CreateUserCommissionTargetDto,
   GetUserCommissionTargetDto,
   UpdateUserCommissionTargetDto,
-} from './targetCommission.dto';
-import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
-import { UsersService } from './users.service';
+} from './dto/targetCommission.dto';
+import { CreateUserDto, getAllUserDto, UpdateUserDto } from './dto/user.dto';
+import { TargetCommisionService } from './services/targetCommision.service';
+import { UsersService } from './services/users.service';
 
 @UseGuards(AuthGaurd, RoleGaurd)
 @Role(Designation.ADMIN)

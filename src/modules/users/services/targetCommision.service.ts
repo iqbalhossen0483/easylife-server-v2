@@ -19,7 +19,7 @@ import {
   CreateUserCommissionTargetDto,
   GetUserCommissionTargetDto,
   UpdateUserCommissionTargetDto,
-} from './targetCommission.dto';
+} from '../dto/targetCommission.dto';
 
 @Injectable()
 export class TargetCommisionService {

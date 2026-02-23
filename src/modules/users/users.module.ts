@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { NotificationService } from 'src/notification/notification.service';
-import { TargetCommisionService } from './targetCommision.service';
+import { TargetCommisionService } from './services/targetCommision.service';
+import { UsersService } from './services/users.service';
 import { UsersController } from './users.controller';
-import { UsersService } from './users.service';
 
 @Module({
   imports: [],
