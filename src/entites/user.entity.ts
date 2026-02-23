@@ -11,6 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { UserCommissionTarget } from './UserCommissionTarget.entity';
+import { NotesEntity } from './notes.entity';
 
 export enum Designation {
   SALES_MAN = 'sales_man',
@@ -29,6 +30,7 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 50 })
   address: string;
 
+  // index
   @Index('IDX_USER_PHONE', { unique: true })
   @Column({ type: 'varchar', length: 11 })
   phone: string;
@@ -38,19 +40,6 @@ export class UserEntity {
 
   @Column({ type: 'enum', enum: Designation })
   designation: Designation;
-
-  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
-    nullable: true,
-    onDelete: 'SET NULL',
-  })
-  @JoinColumn({ name: 'createdBy' })
-  createdBy: UserEntity | null;
-
-  @OneToMany(() => UserEntity, (user) => user.createdBy)
-  createdUsers: UserEntity[];
-
-  @OneToMany(() => UserCommissionTarget, (target) => target.user)
-  targets: UserCommissionTarget[];
 
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;
@@ -90,4 +79,21 @@ export class UserEntity {
 
   @DeleteDateColumn()
   deletedAt: Date;
+
+  // relations
+  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
+    nullable: true,
+    onDelete: 'SET NULL',
+  })
+  @JoinColumn({ name: 'createdBy' })
+  createdBy: UserEntity | null;
+
+  @OneToMany(() => UserEntity, (user) => user.createdBy)
+  createdUsers: UserEntity[];
+
+  @OneToMany(() => UserCommissionTarget, (target) => target.user)
+  targets: UserCommissionTarget[];
+
+  @OneToMany(() => NotesEntity, (note) => note.user)
+  notes: NotesEntity[];
 }
