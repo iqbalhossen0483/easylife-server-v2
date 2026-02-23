@@ -12,6 +12,7 @@ import {
   CommissionStatus,
   UserCommissionTarget,
 } from 'src/entites/UserCommissionTarget.entity';
+import { NotificationService } from 'src/notification/notification.service';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, In } from 'typeorm';
 import {
@@ -22,11 +23,17 @@ import {
 
 @Injectable()
 export class TargetCommisionService {
-  constructor(private readonly tenantDatabaseService: TenantDatabaseService) {}
+  constructor(
+    private readonly tenantDatabaseService: TenantDatabaseService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   private async getUser(condition: FindOptionsWhere<UserEntity>) {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
-    const user = await userRepo.findOne({ where: condition });
+    const user = await userRepo.findOne({
+      where: condition,
+      relations: { createdBy: true },
+    });
 
     return user;
   }
@@ -69,7 +76,12 @@ export class TargetCommisionService {
 
     payload.startDate = startDate.toDate();
     payload.endDate = endDate.endOf('day').toDate();
+
+    const today = moment().startOf('day').toDate();
     const target = targetRepo.create(payload);
+    if (payload.startDate.getTime() < today.getTime()) {
+      target.status = CommissionStatus.RUNNING;
+    }
 
     const commissionAmount =
       payload.targetedAmnt * payload.commissionPercentage;
@@ -81,6 +93,15 @@ export class TargetCommisionService {
     await targetRepo.save(target);
 
     const { user: _, createdBy, ...rest } = target;
+
+    if (user.pushToken) {
+      await this.notificationService.sendNotification({
+        tokens: [user.pushToken],
+        title: 'New Performance Target Assigned',
+        body: `A new performance target has been assigned to you by ${createdBy.name}.`,
+        data: { targetId: target.id },
+      });
+    }
 
     return {
       success: true,
@@ -102,6 +123,11 @@ export class TargetCommisionService {
     if (!target) {
       throw new NotFoundException('Target not found');
     }
+    const targetUser = await this.getUser({ id: target.user.id });
+    if (!targetUser) {
+      throw new NotFoundException('User not found');
+    }
+
     if (target.status === CommissionStatus.ACHIVED) {
       throw new BadRequestException('Target already achived');
     }
@@ -140,6 +166,14 @@ export class TargetCommisionService {
 
     await targetRepo.save(target);
 
+    if (targetUser.pushToken) {
+      await this.notificationService.sendNotification({
+        tokens: [targetUser.pushToken],
+        title: 'Target Update Notification',
+        body: `Your assigned target has been revised by ${target.createdBy.name}. Kindly check your dashboard for updates.`,
+        data: { targetId: target.id },
+      });
+    }
     return {
       success: true,
       message: 'Target updated successfully',
