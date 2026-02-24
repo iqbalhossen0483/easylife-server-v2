@@ -111,7 +111,7 @@ export class ExpenseCategoryService {
 
     await expenseCategoryRepo.save(updateExpenseCategory);
 
-    const { createdBy, ...rest } = updateExpenseCategory;
+    const { createdBy, updatedBy, ...rest } = updateExpenseCategory;
 
     return {
       success: true,
@@ -140,7 +140,7 @@ export class ExpenseCategoryService {
       order: { createdAt: 'DESC' },
       take: limit,
       skip,
-      relations: { createdBy: true },
+      relations: { createdBy: true, updatedBy: true },
       select: {
         createdBy: {
           id: true,
@@ -177,7 +177,7 @@ export class ExpenseCategoryService {
   async getSingleExpenseCategory(expenseCategoryId: number) {
     const expenseCategory = await this.getExpenseCategory({
       where: { id: expenseCategoryId },
-      relations: { createdBy: true },
+      relations: { createdBy: true, updatedBy: true },
       select: {
         createdBy: {
           id: true,

@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DbListEntity } from 'src/entites/dbList.entity';
+import { ExpenseCategoryEntity } from 'src/entites/expense.entity';
 import { NotesEntity } from 'src/entites/notes.entity';
 import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
@@ -47,7 +48,7 @@ export class TenantDatabaseService {
       username: this.configService.get<string>('DB_USERNAME'),
       password: this.configService.get<string>('DB_PASS'),
       database: dbName,
-      entities: [UserEntity, Target, NotesEntity],
+      entities: [UserEntity, Target, NotesEntity, ExpenseCategoryEntity],
       synchronize: true,
     });
 

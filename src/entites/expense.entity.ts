@@ -24,7 +24,7 @@ export class ExpenseCategoryEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
   name: string;
 
-  @Column({ type: 'text', length: 200, default: null })
+  @Column({ type: 'varchar', length: 200, default: null })
   description?: string;
 
   @ManyToOne(() => UserEntity, (user) => user.id)

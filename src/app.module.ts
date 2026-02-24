@@ -4,6 +4,7 @@ import { JWTConfigModule } from './configs/jwt.config.module';
 import { DatabaseModule } from './database/root.database.module';
 import { TenantDatabaseModule } from './database/tenant.database.module';
 import { ApiValidationPipe } from './middleware/api.validation.pipe';
+import { ExpenseCategoryModule } from './modules/admin_and_manager/expense_category/expense.category.module';
 import { ReportModule } from './modules/admin_and_manager/report/report.module';
 import { TargetModule } from './modules/admin_and_manager/targets/target.module';
 import { UsersModule } from './modules/admin_and_manager/user/users.module';
@@ -18,6 +19,7 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     TenantDatabaseModule,
     JWTConfigModule,
     AuthModule,
+    ExpenseCategoryModule,
     UsersModule,
     TargetModule,
     NoteModule,
