@@ -15,14 +15,10 @@ import {
 import { NotificationService } from 'src/notification/notification.service';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, In } from 'typeorm';
-import {
-  CreateUserCommissionTargetDto,
-  GetUserCommissionTargetDto,
-  UpdateUserCommissionTargetDto,
-} from '../dto/targetCommission.dto';
+import { CreateTargetDto, GetTargetDto, UpdateTargetDto } from './target.dto';
 
 @Injectable()
-export class TargetCommisionService {
+export class TargetService {
   constructor(
     private readonly tenantDatabaseService: TenantDatabaseService,
     private readonly notificationService: NotificationService,
@@ -38,7 +34,7 @@ export class TargetCommisionService {
     return user;
   }
 
-  async createUserTarget(payload: CreateUserCommissionTargetDto) {
+  async createUserTarget(payload: CreateTargetDto) {
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
     const targetRepo =
       await this.tenantDatabaseService.getRepository(UserCommissionTarget);
@@ -112,7 +108,7 @@ export class TargetCommisionService {
 
   async updateUserCommissionTarget(
     targetCommissionId: number,
-    payload: UpdateUserCommissionTargetDto,
+    payload: UpdateTargetDto,
   ) {
     const targetRepo =
       await this.tenantDatabaseService.getRepository(UserCommissionTarget);
@@ -181,12 +177,7 @@ export class TargetCommisionService {
     };
   }
 
-  async getAllTargets({
-    page = 1,
-    limit = 10,
-    status,
-    userId,
-  }: GetUserCommissionTargetDto) {
+  async getAllTargets({ page = 1, limit = 10, status, userId }: GetTargetDto) {
     const skip = (page - 1) * limit;
 
     const targetRepo =

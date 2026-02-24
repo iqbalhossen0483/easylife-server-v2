@@ -13,11 +13,11 @@ import {
 import { CurrentUser } from 'src/decorators/currentUser';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import type { JWT_Payload } from 'src/types/common';
-import { CreateNoteDto, GetQueryNoteDto } from '../dto/notes.dto';
-import { NoteService } from '../services/note.service';
+import { NoteService } from './note.service';
+import { CreateNoteDto, GetQueryNoteDto } from './notes.dto';
 
 @UseGuards(AuthGaurd)
-@Controller('/users/note')
+@Controller('/user/note')
 export class NoteController {
   constructor(private readonly noteService: NoteService) {}
 

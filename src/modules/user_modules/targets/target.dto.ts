@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { CommissionStatus } from 'src/entites/UserCommissionTarget.entity';
 
-export class CreateUserCommissionTargetDto {
+export class CreateTargetDto {
   @IsNotEmpty({ message: 'User id is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'User id must be a number' })
@@ -46,7 +46,7 @@ export class CreateUserCommissionTargetDto {
   commissionPercentage: number;
 }
 
-export class UpdateUserCommissionTargetDto {
+export class UpdateTargetDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber(
@@ -78,7 +78,7 @@ export class UpdateUserCommissionTargetDto {
   commissionPercentage?: number;
 }
 
-export class GetUserCommissionTargetDto {
+export class GetTargetDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'User id must be a number' })

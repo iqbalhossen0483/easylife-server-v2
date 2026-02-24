@@ -10,7 +10,7 @@ import { NotesEntity } from 'src/entites/notes.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere } from 'typeorm';
-import { CreateNoteDto, UpdateNoteDto } from '../dto/notes.dto';
+import { CreateNoteDto, UpdateNoteDto } from './notes.dto';
 
 @Injectable()
 export class NoteService {

@@ -9,7 +9,7 @@ import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, ILike } from 'typeorm';
-import { CreateUserDto, getAllUserDto, UpdateUserDto } from '../dto/user.dto';
+import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
 
 @Injectable()
 export class UsersService {
