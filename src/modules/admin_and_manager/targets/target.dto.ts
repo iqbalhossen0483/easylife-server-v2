@@ -8,7 +8,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { CommissionStatus } from 'src/entites/UserCommissionTarget.entity';
+import { CommissionStatus } from 'src/entites/target.entity';
 
 export class CreateTargetDto {
   @IsNotEmpty({ message: 'User id is required' })

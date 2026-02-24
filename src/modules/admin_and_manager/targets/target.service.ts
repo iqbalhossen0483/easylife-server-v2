@@ -7,11 +7,8 @@ import {
 } from '@nestjs/common';
 import moment from 'moment';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { CommissionStatus, Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
-import {
-  CommissionStatus,
-  UserCommissionTarget,
-} from 'src/entites/UserCommissionTarget.entity';
 import { NotificationService } from 'src/services/notification.service';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, In } from 'typeorm';
@@ -36,8 +33,7 @@ export class TargetService {
 
   async createUserTarget(payload: CreateTargetDto) {
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
-    const targetRepo =
-      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
     const user = await this.getUser({ id: payload.userId });
     if (!user) {
@@ -110,8 +106,7 @@ export class TargetService {
     targetCommissionId: number,
     payload: UpdateTargetDto,
   ) {
-    const targetRepo =
-      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
     const target = await targetRepo.findOne({
       where: { id: targetCommissionId },
@@ -180,10 +175,9 @@ export class TargetService {
   async getAllTargets({ page = 1, limit = 10, status, userId }: GetTargetDto) {
     const skip = (page - 1) * limit;
 
-    const targetRepo =
-      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
-    const query: FindOptionsWhere<UserCommissionTarget> = {};
+    const query: FindOptionsWhere<Target> = {};
 
     if (status) {
       query.status = status;
@@ -231,8 +225,7 @@ export class TargetService {
   }
 
   async getSingleTarget(targetCommissionId: number) {
-    const targetRepo =
-      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
     const target = await targetRepo.findOne({
       where: { id: targetCommissionId },
@@ -262,8 +255,7 @@ export class TargetService {
   }
 
   async softDeleteTarget(targetCommissionId: number) {
-    const targetRepo =
-      await this.tenantDatabaseService.getRepository(UserCommissionTarget);
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
     const target = await targetRepo.findOne({
       where: { id: targetCommissionId },

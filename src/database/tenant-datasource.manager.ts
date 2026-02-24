@@ -9,8 +9,8 @@ import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DbListEntity } from 'src/entites/dbList.entity';
 import { NotesEntity } from 'src/entites/notes.entity';
+import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
-import { UserCommissionTarget } from 'src/entites/UserCommissionTarget.entity';
 import { JWT_Payload } from 'src/types/common';
 import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
 
@@ -47,7 +47,7 @@ export class TenantDatabaseService {
       username: this.configService.get<string>('DB_USERNAME'),
       password: this.configService.get<string>('DB_PASS'),
       database: dbName,
-      entities: [UserEntity, UserCommissionTarget, NotesEntity],
+      entities: [UserEntity, Target, NotesEntity],
       synchronize: true,
     });
 

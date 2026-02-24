@@ -10,8 +10,8 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { UserCommissionTarget } from './UserCommissionTarget.entity';
 import { NotesEntity } from './notes.entity';
+import { Target } from './target.entity';
 
 export enum Designation {
   SALES_MAN = 'sales_man',
@@ -92,8 +92,8 @@ export class UserEntity {
   @OneToMany(() => UserEntity, (user) => user.createdBy)
   createdUsers: UserEntity[];
 
-  @OneToMany(() => UserCommissionTarget, (target) => target.user)
-  targets: UserCommissionTarget[];
+  @OneToMany(() => Target, (target) => target.user)
+  targets: Target[];
 
   @OneToMany(() => NotesEntity, (note) => note.user)
   notes: NotesEntity[];

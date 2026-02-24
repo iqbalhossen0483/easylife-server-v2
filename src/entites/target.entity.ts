@@ -18,7 +18,7 @@ export enum CommissionStatus {
 }
 
 @Entity('user_commision_target')
-export class UserCommissionTarget {
+export class Target {
   @PrimaryGeneratedColumn()
   id: number;
 
