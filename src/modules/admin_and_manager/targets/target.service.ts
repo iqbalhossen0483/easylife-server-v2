@@ -12,7 +12,7 @@ import {
   CommissionStatus,
   UserCommissionTarget,
 } from 'src/entites/UserCommissionTarget.entity';
-import { NotificationService } from 'src/notification/notification.service';
+import { NotificationService } from 'src/services/notification.service';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, In } from 'typeorm';
 import { CreateTargetDto, GetTargetDto, UpdateTargetDto } from './target.dto';

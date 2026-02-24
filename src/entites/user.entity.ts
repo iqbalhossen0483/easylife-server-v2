@@ -17,6 +17,7 @@ export enum Designation {
   SALES_MAN = 'sales_man',
   ADMIN = 'admin',
   STORE_MANAGER = 'store_manager',
+  MANAGER = 'manager',
 }
 
 @Entity('users')
