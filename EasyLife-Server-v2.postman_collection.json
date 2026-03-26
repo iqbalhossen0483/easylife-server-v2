@@ -1,0 +1,1105 @@
+{
+	"info": {
+		"_postman_id": "easylife-server-v2",
+		"name": "EasyLife Server v2",
+		"description": "EasyLife Server v2 - NestJS Multi-Tenant ERP API Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tenantId",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "expenseCategoryId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "targetId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "noteId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.token) {",
+									"    pm.collectionVariables.set('token', res.data.token);",
+									"}",
+									"",
+									"pm.test('Login successful', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"phone\": \"01234567890\",\n    \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login with phone and password. Returns JWT token."
+					}
+				},
+				{
+					"name": "Get Profile",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Profile retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/get-profile",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "get-profile"]
+						},
+						"description": "Get current authenticated user's profile with relations."
+					}
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Logout successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/logout",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "logout"]
+						},
+						"description": "Logout and clear JWT cookie."
+					}
+				}
+			],
+			"description": "Authentication endpoints - login, logout, profile"
+		},
+		{
+			"name": "User Management (Admin)",
+			"item": [
+				{
+					"name": "Create User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.id) {",
+									"    pm.collectionVariables.set('userId', res.data.id);",
+									"}",
+									"",
+									"pm.test('User created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"phone\": \"01987654321\",\n    \"password\": \"pass123\",\n    \"address\": \"123 Main Street\",\n    \"designation\": \"sales_man\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "create"]
+						},
+						"description": "Create a new user. Requires ADMIN role.\n\nDesignation options: sales_man, admin, store_manager, manager"
+					}
+				},
+				{
+					"name": "Get All Users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Users listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/all?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "all"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all users with pagination and optional search. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Get Single User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('User retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/single-user/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "single-user", "{{userId}}"]
+						},
+						"description": "Get a single user by ID. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Update User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('User updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"address\": \"456 New Street\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/update/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "update", "{{userId}}"]
+						},
+						"description": "Update user by ID. All fields optional. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Delete User (Soft)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('User deleted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/delete/{{userId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "delete", "{{userId}}"]
+						},
+						"description": "Soft delete user by ID. Requires ADMIN role."
+					}
+				}
+			],
+			"description": "User management endpoints - CRUD operations (Admin only)"
+		},
+		{
+			"name": "Expense Categories (Admin)",
+			"item": [
+				{
+					"name": "Create Expense Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.id) {",
+									"    pm.collectionVariables.set('expenseCategoryId', res.data.id);",
+									"}",
+									"",
+									"pm.test('Category created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Office Supplies\",\n    \"description\": \"Expenses for office supplies and stationery\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/expense_category/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "expense_category", "create"]
+						},
+						"description": "Create a new expense category. Requires ADMIN role.\n\nname: 3-50 characters (required)\ndescription: 3-200 characters (optional)"
+					}
+				},
+				{
+					"name": "Get All Expense Categories",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Categories listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/admin/expense_category/all?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "expense_category", "all"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all expense categories with pagination and optional search. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Get Single Expense Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Category retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/admin/expense_category/single/{{expenseCategoryId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "expense_category", "single", "{{expenseCategoryId}}"]
+						},
+						"description": "Get a single expense category by ID. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Update Expense Category",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Category updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Office Supplies Updated\",\n    \"description\": \"Updated description for office supplies\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/admin/expense_category/update/{{expenseCategoryId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "expense_category", "update", "{{expenseCategoryId}}"]
+						},
+						"description": "Update expense category by ID. All fields optional. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Delete Expense Category (Soft)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Category deleted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/admin/expense_category/delete/{{expenseCategoryId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["admin", "expense_category", "delete", "{{expenseCategoryId}}"]
+						},
+						"description": "Soft delete expense category by ID. Requires ADMIN role."
+					}
+				}
+			],
+			"description": "Expense category management endpoints (Admin only)"
+		},
+		{
+			"name": "Commission Targets (Admin)",
+			"item": [
+				{
+					"name": "Create Target",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.id) {",
+									"    pm.collectionVariables.set('targetId', res.data.id);",
+									"}",
+									"",
+									"pm.test('Target created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": 1,\n    \"targetedAmnt\": 50000,\n    \"startDate\": \"2026-04-01\",\n    \"endDate\": \"2026-04-30\",\n    \"commissionPercentage\": 5.5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/target/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "target", "create"]
+						},
+						"description": "Create a sales target for a user. Requires ADMIN role.\n\ncommissionPercentage: 0.0001 - 100 (max 4 decimal places)\nMax 1 pending/running target per user."
+					}
+				},
+				{
+					"name": "Get All Targets",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Targets listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/target/all?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "target", "all"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "userId",
+									"value": "",
+									"disabled": true
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "active | expired",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all targets with pagination. Optional filters: userId, status (active/expired). Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Get Single Target",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Target retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/target/single/{{targetId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "target", "single", "{{targetId}}"]
+						},
+						"description": "Get a single target by ID. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Update Target",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Target updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"targetedAmnt\": 60000,\n    \"commissionPercentage\": 6.0\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/target/update/{{targetId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "target", "update", "{{targetId}}"]
+						},
+						"description": "Update target by ID. Cannot modify achieved/failed targets. Requires ADMIN role."
+					}
+				},
+				{
+					"name": "Delete Target (Soft)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Target deleted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/target/delete/{{targetId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "target", "delete", "{{targetId}}"]
+						},
+						"description": "Soft delete target by ID. Requires ADMIN role."
+					}
+				}
+			],
+			"description": "Commission target management endpoints (Admin only)"
+		},
+		{
+			"name": "Notes",
+			"item": [
+				{
+					"name": "Create Note",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"if (res.success && res.data && res.data.id) {",
+									"    pm.collectionVariables.set('noteId', res.data.id);",
+									"}",
+									"",
+									"pm.test('Note created', function () {",
+									"    pm.response.to.have.status(201);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Meeting Notes\",\n    \"content\": \"Discussed Q2 targets and commission structure updates\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/note/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "note", "create"]
+						},
+						"description": "Create a personal note. Any authenticated user.\n\ntitle: 3-50 characters\ncontent: 3-1000 characters"
+					}
+				},
+				{
+					"name": "Get All Notes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Notes listed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/note/all?page=1&limit=10",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "note", "all"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						},
+						"description": "Get all notes belonging to the authenticated user. Paginated."
+					}
+				},
+				{
+					"name": "Get Single Note",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Note retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/note/single/{{noteId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "note", "single", "{{noteId}}"]
+						},
+						"description": "Get a single note by ID."
+					}
+				},
+				{
+					"name": "Update Note",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Note updated', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Meeting Notes\",\n    \"content\": \"Added action items from the Q2 planning session\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/user/note/update/{{noteId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "note", "update", "{{noteId}}"]
+						},
+						"description": "Update a note by ID. Only the note owner can update."
+					}
+				},
+				{
+					"name": "Delete Note (Soft)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const res = pm.response.json();",
+									"pm.test('Note deleted', function () {",
+									"    pm.response.to.have.status(200);",
+									"    pm.expect(res.success).to.be.true;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "x-tenant-id",
+								"value": "{{tenantId}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/user/note/delete/{{noteId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["user", "note", "delete", "{{noteId}}"]
+						},
+						"description": "Soft delete a note by ID. Only the note owner can delete."
+					}
+				}
+			],
+			"description": "Notes endpoints - personal note management (any authenticated user)"
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
