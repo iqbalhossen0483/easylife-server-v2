@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 145 / 155 tasks completed (94%)
+## Progress: 151 / 155 tasks completed (97%)
 
 ---
 
@@ -319,12 +319,12 @@
 - [x] 19.2 Configure Swagger/OpenAPI with decorators
 - [x] 19.3 Configure ThrottlerModule for rate limiting
 - [x] 19.4 Add health check endpoint
-- [ ] 19.5 Write unit tests for AuthService
-- [ ] 19.6 Write unit tests for UserService
-- [ ] 19.7 Write unit tests for OrderService
-- [ ] 19.8 Write unit tests for ExpenseService
-- [ ] 19.9 Write E2E tests for auth flow
-- [ ] 19.10 Write E2E tests for order workflow
+- [x] 19.5 Write unit tests for AuthService
+- [x] 19.6 Write unit tests for UserService
+- [x] 19.7 Write unit tests for OrderService
+- [x] 19.8 Write unit tests for ExpenseService
+- [x] 19.9 Write E2E tests for auth flow
+- [x] 19.10 Write E2E tests for order workflow
 - [ ] 19.11 Set up CI/CD pipeline
 - [ ] 19.12 Create Dockerfile for production
 - [ ] 19.13 Create docker-compose.yml (app + postgres + redis)
