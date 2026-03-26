@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import {
   ExpenseCategoryEntity,
   ExpenseEntity,
@@ -17,7 +18,10 @@ import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
 
 @Injectable()
 export class ExpenseService {
-  constructor(private readonly tenantDbService: TenantDatabaseService) {}
+  constructor(
+    private readonly tenantDbService: TenantDatabaseService,
+    private readonly reportService: ReportUpdateService,
+  ) {}
 
   async submitExpense(payload: CreateExpenseDto, currentUserId: number) {
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
@@ -54,16 +58,16 @@ export class ExpenseService {
 
     await expenseRepo.save(expense);
 
-    // If admin, immediately update user balance
+    // If admin, immediately update user balance and cash reports
     if (isAdmin) {
       await userRepo.decrement(
         { id: currentUserId },
         'have_money',
         payload.amount,
       );
+      await this.reportService.updateCashReport('expense', payload.amount);
+      await this.reportService.updateCashReport('cash_out', payload.amount);
     }
-
-    // TODO: Update cash reports
 
     return {
       success: true,
@@ -107,9 +111,19 @@ export class ExpenseService {
         Number(expense.amount),
       );
 
-      await qr.commitTransaction();
+      // Update cash reports
+      await this.reportService.updateCashReport(
+        'expense',
+        Number(expense.amount),
+        qr.manager,
+      );
+      await this.reportService.updateCashReport(
+        'cash_out',
+        Number(expense.amount),
+        qr.manager,
+      );
 
-      // TODO: Update cash reports
+      await qr.commitTransaction();
 
       return {
         success: true,

@@ -7,13 +7,17 @@ import {
 } from 'src/entites/production.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import { clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere } from 'typeorm';
 import { CreateProductionDto, GetAllProductionDto } from './production.dto';
 
 @Injectable()
 export class ProductionService {
-  constructor(private readonly tenantDbService: TenantDatabaseService) {}
+  constructor(
+    private readonly tenantDbService: TenantDatabaseService,
+    private readonly reportService: ReportUpdateService,
+  ) {}
 
   async createProduction(payload: CreateProductionDto, currentUserId: number) {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
@@ -71,9 +75,21 @@ export class ProductionService {
         );
       }
 
-      await qr.commitTransaction();
+      // Update stock report for main product
+      const updatedProduct = await prodProductRepo.findOne({
+        where: { id: payload.product_id },
+      });
+      if (updatedProduct) {
+        await this.reportService.updateStockReport(
+          payload.product_id,
+          0,
+          0,
+          updatedProduct.stock,
+          qr.manager,
+        );
+      }
 
-      // TODO: Update stock reports when report entities are built
+      await qr.commitTransaction();
 
       return {
         success: true,

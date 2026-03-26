@@ -7,6 +7,11 @@ import {
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { CustomerEntity } from 'src/entites/customer.entity';
 import {
+  ExpenseCategoryEntity,
+  ExpenseEntity,
+  ExpenseStatus,
+} from 'src/entites/expense.entity';
+import {
   CollectionEntity,
   OrderEntity,
   OrderProductEntity,
@@ -15,6 +20,7 @@ import {
 import { ProductEntity } from 'src/entites/product.entity';
 import { CommissionStatus, Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import { API_Meta } from 'src/types/common';
 import { clampLimit } from 'src/utils/file.util';
 import { Between, FindOptionsWhere } from 'typeorm';
@@ -27,7 +33,10 @@ import {
 
 @Injectable()
 export class OrderService {
-  constructor(private readonly tenantDbService: TenantDatabaseService) {}
+  constructor(
+    private readonly tenantDbService: TenantDatabaseService,
+    private readonly reportService: ReportUpdateService,
+  ) {}
 
   async createOrder(payload: CreateOrderDto, currentUserId: number) {
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
@@ -303,6 +312,41 @@ export class OrderService {
       // Update sales targets
       await this.updateSalesTargets(order, qr.manager);
 
+      // Update cash reports
+      await this.reportService.updateCashReport(
+        'total_sale',
+        Number(order.total_sale),
+        qr.manager,
+      );
+      await this.reportService.updateCashReport(
+        'due_sale',
+        Number(order.due),
+        qr.manager,
+      );
+      if (Number(order.payment) > 0) {
+        await this.reportService.updateCashReport(
+          'cash_in',
+          Number(order.payment),
+          qr.manager,
+        );
+      }
+
+      // Update stock reports per product
+      for (const item of order.products) {
+        const product = await productRepo.findOne({
+          where: { id: item.product_id },
+        });
+        if (product) {
+          await this.reportService.updateStockReport(
+            item.product_id,
+            item.qty,
+            0,
+            product.stock,
+            qr.manager,
+          );
+        }
+      }
+
       await qr.commitTransaction();
 
       return {
@@ -396,6 +440,48 @@ export class OrderService {
         );
       }
 
+      // Update cash reports
+      await this.reportService.updateCashReport(
+        'collection',
+        collectionAmount,
+        qr.manager,
+      );
+      await this.reportService.updateCashReport(
+        'cash_in',
+        collectionAmount,
+        qr.manager,
+      );
+
+      // Auto-create discount expense if applicable
+      if (discountAmount > 0) {
+        await this.reportService.updateCashReport(
+          'expense',
+          discountAmount,
+          qr.manager,
+        );
+        const expenseCategoryRepo =
+          qr.manager.getRepository<ExpenseCategoryEntity>(
+            ExpenseCategoryEntity,
+          );
+        const discountCategory = await expenseCategoryRepo.findOne({
+          where: { name: 'Discount' },
+        });
+        if (discountCategory) {
+          const expenseRepo =
+            qr.manager.getRepository<ExpenseEntity>(ExpenseEntity);
+          const expense = expenseRepo.create({
+            type: discountCategory,
+            amount: discountAmount,
+            status: ExpenseStatus.APPROVED,
+            created_by: { id: currentUserId } as UserEntity,
+            approved_by: { id: currentUserId } as UserEntity,
+            approved_at: new Date(),
+            note: `Auto-created discount from order #${orderId}`,
+          });
+          await expenseRepo.save(expense);
+        }
+      }
+
       await qr.commitTransaction();
 
       return {
@@ -441,34 +527,54 @@ export class OrderService {
     manager: import('typeorm').EntityManager,
   ) {
     const targetRepo = manager.getRepository(Target);
+    const totalSale = Number(order.total_sale);
+    const isSameUser = order.created_by?.id === order.delivered_by?.id;
 
-    // Update delivery user's running target
-    if (order.delivered_by) {
-      const deliveryTarget = await targetRepo.findOne({
-        where: {
-          user: { id: order.delivered_by.id },
-          status: CommissionStatus.RUNNING,
-        },
-      });
-      if (deliveryTarget) {
-        deliveryTarget.achived_amnt =
-          Number(deliveryTarget.achived_amnt) + Number(order.total_sale);
-        await targetRepo.save(deliveryTarget);
+    if (isSameUser) {
+      // Same user created and delivered — full 100%
+      if (order.delivered_by) {
+        const target = await targetRepo.findOne({
+          where: {
+            user: { id: order.delivered_by.id },
+            status: CommissionStatus.RUNNING,
+          },
+        });
+        if (target) {
+          target.achived_amnt = Number(target.achived_amnt) + totalSale;
+          await targetRepo.save(target);
+        }
       }
-    }
+    } else {
+      const halfSale = Math.round(totalSale / 2);
 
-    // Update order creator's running target
-    if (order.created_by && order.created_by.id !== order.delivered_by?.id) {
-      const creatorTarget = await targetRepo.findOne({
-        where: {
-          user: { id: order.created_by.id },
-          status: CommissionStatus.RUNNING,
-        },
-      });
-      if (creatorTarget) {
-        creatorTarget.achived_amnt =
-          Number(creatorTarget.achived_amnt) + Number(order.total_sale);
-        await targetRepo.save(creatorTarget);
+      // 50% to delivery user
+      if (order.delivered_by) {
+        const deliveryTarget = await targetRepo.findOne({
+          where: {
+            user: { id: order.delivered_by.id },
+            status: CommissionStatus.RUNNING,
+          },
+        });
+        if (deliveryTarget) {
+          deliveryTarget.achived_amnt =
+            Number(deliveryTarget.achived_amnt) + halfSale;
+          await targetRepo.save(deliveryTarget);
+        }
+      }
+
+      // 50% to order creator
+      if (order.created_by) {
+        const creatorTarget = await targetRepo.findOne({
+          where: {
+            user: { id: order.created_by.id },
+            status: CommissionStatus.RUNNING,
+          },
+        });
+        if (creatorTarget) {
+          creatorTarget.achived_amnt =
+            Number(creatorTarget.achived_amnt) + (totalSale - halfSale);
+          await targetRepo.save(creatorTarget);
+        }
       }
     }
   }

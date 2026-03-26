@@ -6,7 +6,9 @@ import {
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { ExpenseEntity } from 'src/entites/expense.entity';
 import { NotesEntity } from 'src/entites/notes.entity';
+import { CollectionEntity, OrderEntity } from 'src/entites/order.entity';
 import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
@@ -225,7 +227,35 @@ export class UsersService {
       take: 5,
     });
 
-    // TODO: Add orders, collections, expenses when those modules are built
+    // Orders
+    const orderRepo =
+      await this.tenantDatabaseService.getRepository(OrderEntity);
+    const orders = await orderRepo.find({
+      where: [
+        { created_by: { id: userId } },
+        { delivered_by: { id: userId } },
+      ],
+      order: { created_at: 'DESC' },
+      take: 5,
+    });
+
+    // Collections
+    const collectionRepo =
+      await this.tenantDatabaseService.getRepository(CollectionEntity);
+    const collections = await collectionRepo.find({
+      where: { receiver: { id: userId } },
+      order: { created_at: 'DESC' },
+      take: 5,
+    });
+
+    // Expenses
+    const expenseRepo =
+      await this.tenantDatabaseService.getRepository(ExpenseEntity);
+    const expenses = await expenseRepo.find({
+      where: { created_by: { id: userId } },
+      order: { created_at: 'DESC' },
+      take: 5,
+    });
 
     return {
       success: true,
@@ -233,9 +263,9 @@ export class UsersService {
       data: {
         targets,
         notes,
-        orders: [],
-        collections: [],
-        expenses: [],
+        orders,
+        collections,
+        expenses,
       },
     };
   }

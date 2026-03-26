@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { CustomerEntity } from 'src/entites/customer.entity';
+import { OrderEntity } from 'src/entites/order.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
 import { deleteFile, clampLimit } from 'src/utils/file.util';
@@ -139,14 +140,20 @@ export class CustomerService {
       throw new NotFoundException('Customer not found');
     }
 
-    // TODO: Include order history when Order module is built
+    // Include recent orders
+    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
+    const orders = await orderRepo.find({
+      where: { shop: { id: customerId } },
+      order: { created_at: 'DESC' },
+      take: 20,
+    });
 
     return {
       success: true,
       message: 'Customer fetched successfully',
       data: {
         ...customer,
-        orders: [],
+        orders,
       },
     };
   }

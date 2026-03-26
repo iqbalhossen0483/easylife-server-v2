@@ -5,6 +5,7 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { PurchaseEntity } from 'src/entites/purchase.entity';
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { API_Meta } from 'src/types/common';
 import { deleteFile, clampLimit } from 'src/utils/file.util';
@@ -87,14 +88,22 @@ export class SupplierService {
       throw new NotFoundException('Supplier not found');
     }
 
-    // TODO: Include purchase history when Purchase module is built
+    // Include recent purchases
+    const purchaseRepo =
+      await this.tenantDbService.getRepository(PurchaseEntity);
+    const purchases = await purchaseRepo.find({
+      where: { supplier: { id: supplierId } },
+      relations: { products: true },
+      order: { created_at: 'DESC' },
+      take: 20,
+    });
 
     return {
       success: true,
       message: 'Supplier fetched successfully',
       data: {
         ...supplier,
-        purchases: [],
+        purchases,
       },
     };
   }

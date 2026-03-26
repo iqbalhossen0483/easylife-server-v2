@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { ProductEntity } from 'src/entites/product.entity';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import {
   PurchaseCollectionEntity,
   PurchaseEntity,
@@ -23,7 +24,10 @@ import {
 
 @Injectable()
 export class PurchaseService {
-  constructor(private readonly tenantDbService: TenantDatabaseService) {}
+  constructor(
+    private readonly tenantDbService: TenantDatabaseService,
+    private readonly reportService: ReportUpdateService,
+  ) {}
 
   async createPurchase(
     payload: CreatePurchaseDto,
@@ -105,9 +109,37 @@ export class PurchaseService {
         );
       }
 
-      await qr.commitTransaction();
+      // Update cash reports
+      await this.reportService.updateCashReport(
+        'purchase',
+        payload.total_amount,
+        qr.manager,
+      );
+      if (paymentAmount > 0) {
+        await this.reportService.updateCashReport(
+          'cash_out',
+          paymentAmount,
+          qr.manager,
+        );
+      }
 
-      // TODO: Create transaction history, update cash/stock reports
+      // Update stock reports per product
+      for (const item of payload.products) {
+        const product = await qr.manager
+          .getRepository(ProductEntity)
+          .findOne({ where: { id: item.product_id } });
+        if (product) {
+          await this.reportService.updateStockReport(
+            item.product_id,
+            0,
+            item.qty,
+            product.stock,
+            qr.manager,
+          );
+        }
+      }
+
+      await qr.commitTransaction();
 
       return {
         success: true,
@@ -220,9 +252,19 @@ export class PurchaseService {
         payload.amount,
       );
 
-      await qr.commitTransaction();
+      // Update cash reports
+      await this.reportService.updateCashReport(
+        'purchase',
+        payload.amount,
+        qr.manager,
+      );
+      await this.reportService.updateCashReport(
+        'cash_out',
+        payload.amount,
+        qr.manager,
+      );
 
-      // TODO: Update cash reports
+      await qr.commitTransaction();
 
       return {
         success: true,
