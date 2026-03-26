@@ -40,8 +40,8 @@ export class ExpenseService {
     });
     if (!category) throw new NotFoundException('Expense category not found');
 
-    // Admin: direct approval. Non-admin: pending
-    const isAdmin = currentUser.designation === Designation.ADMIN;
+    // Super admin: direct approval. Others: pending
+    const isAdmin = currentUser.designation === Designation.SUPER_ADMIN;
 
     const expense = expenseRepo.create({
       type: category,

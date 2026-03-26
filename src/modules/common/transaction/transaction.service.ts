@@ -63,6 +63,11 @@ export class TransactionService {
       PendingBalanceTransferEntity,
     );
 
+    const fromUser = await userRepo.findOne({
+      where: { id: currentUserId },
+    });
+    if (!fromUser) throw new NotFoundException('Sender user not found');
+
     const toUser = await userRepo.findOne({
       where: { id: payload.to_user_id },
     });
@@ -70,6 +75,23 @@ export class TransactionService {
 
     if (currentUserId === payload.to_user_id) {
       throw new BadRequestException('Cannot transfer to yourself');
+    }
+
+    // Validate sender has sufficient balance
+    if (payload.purpose === TransferPurpose.DEBT_PAYMENT) {
+      // Debt payment deducts from sender's debt
+      if (Number(fromUser.debt) < payload.amount) {
+        throw new BadRequestException(
+          `Insufficient debt balance. Your debt: ${fromUser.debt}`,
+        );
+      }
+    } else {
+      // All other transfers deduct from sender's have_money
+      if (Number(fromUser.have_money) < payload.amount) {
+        throw new BadRequestException(
+          `Insufficient balance. Your balance: ${fromUser.have_money}`,
+        );
+      }
     }
 
     const pending = pendingRepo.create({

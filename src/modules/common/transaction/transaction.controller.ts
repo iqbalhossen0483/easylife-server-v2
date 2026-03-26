@@ -11,12 +11,13 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from 'src/decorators/currentUser';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
+import { RoleGaurd } from 'src/guards/RoleGaurd';
 import type { JWT_Payload } from 'src/types/common';
 import { BalanceTransferDto } from './transaction.dto';
 import { TransactionService } from './transaction.service';
 
 @ApiTags('Transaction & Balance Transfer')
-@UseGuards(AuthGaurd)
+@UseGuards(AuthGaurd, RoleGaurd)
 @Controller('user/transaction')
 export class TransactionController {
   constructor(private readonly transactionService: TransactionService) {}

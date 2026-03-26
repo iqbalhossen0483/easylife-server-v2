@@ -55,6 +55,33 @@ export class OrderService {
     if (!deliveredByUser)
       throw new NotFoundException('Delivery user not found');
 
+    // Validate products total matches total_sale
+    const calculatedTotal = payload.products.reduce(
+      (sum, p) => sum + Number(p.total),
+      0,
+    );
+    if (Math.abs(calculatedTotal - payload.total_sale) > 0.01) {
+      throw new BadRequestException(
+        `Products total (${calculatedTotal}) does not match total_sale (${payload.total_sale})`,
+      );
+    }
+
+    // Validate payment does not exceed total_sale
+    const payment = payload.payment ?? 0;
+    if (payment > payload.total_sale) {
+      throw new BadRequestException('Payment cannot exceed total sale amount');
+    }
+
+    // Validate each product's total = qty * price
+    for (const p of payload.products) {
+      const expectedTotal = p.qty * p.price;
+      if (Math.abs(expectedTotal - p.total) > 0.01) {
+        throw new BadRequestException(
+          `Product "${p.product_name}" total (${p.total}) does not match qty(${p.qty}) × price(${p.price}) = ${expectedTotal}`,
+        );
+      }
+    }
+
     const orderProducts = payload.products.map((p) => {
       const op = new OrderProductEntity();
       op.product_id = p.product_id;
@@ -386,10 +413,29 @@ export class OrderService {
 
       const collectionAmount = payload.amount;
       const discountAmount = payload.discount ?? 0;
+      const orderDue = Number(order.due);
       const totalReceived = collectionAmount + discountAmount;
 
-      if (totalReceived > Number(order.due)) {
-        throw new BadRequestException('Amount exceeds remaining due');
+      if (collectionAmount > orderDue) {
+        throw new BadRequestException(
+          `Collection amount (${collectionAmount}) exceeds remaining due (${orderDue})`,
+        );
+      }
+
+      if (totalReceived > orderDue) {
+        throw new BadRequestException(
+          `Total received (${totalReceived}) exceeds remaining due (${orderDue})`,
+        );
+      }
+
+      // Discount cannot exceed 2% of order due
+      if (discountAmount > 0) {
+        const maxDiscount = orderDue * 0.02;
+        if (discountAmount > maxDiscount) {
+          throw new BadRequestException(
+            `Discount (${discountAmount}) exceeds maximum 2% of due (${maxDiscount.toFixed(2)})`,
+          );
+        }
       }
 
       // Create collection record
