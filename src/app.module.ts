@@ -16,6 +16,7 @@ import { TargetModule } from './modules/admin_and_manager/targets/target.module'
 import { UsersModule } from './modules/admin_and_manager/user/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { NoteModule } from './modules/common/notes/notes.module';
+import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
 import { TransactionModule } from './modules/common/transaction/transaction.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     ExpenseCategoryModule,
     UsersModule,
     TargetModule,
+    TenantModule,
     NoteModule,
     ReportModule,
     TransactionModule,

@@ -29,15 +29,24 @@ export class DbListEntity {
   @Column({ type: 'int' })
   max_customer: number;
 
-  @Column({ type: 'varchar', length: 11 })
+  @Column({ type: 'int', default: 0 })
+  current_user: number;
+
+  @Column({ type: 'int', default: 0 })
+  current_product: number;
+
+  @Column({ type: 'int', default: 0 })
+  current_customer: number;
+
+  @Column({ type: 'varchar', length: 11, nullable: true })
   phone: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   address: string;
 
-  @Column({ type: 'varchar', length: 11 })
+  @Column({ type: 'varchar', length: 11, nullable: true })
   alt_phone: string;
 
-  @Column({ type: 'varchar', length: 40 })
+  @Column({ type: 'varchar', length: 40, nullable: true })
   owner_name: string;
 }

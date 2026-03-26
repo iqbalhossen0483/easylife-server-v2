@@ -83,4 +83,22 @@ export class TenantDatabaseService {
   getCurrentUserId() {
     return this.request.user?.sub;
   }
+
+  async updateTenantCount(
+    field: 'current_user' | 'current_product' | 'current_customer',
+    increment: boolean,
+  ) {
+    const tenantId = this.getTenantId();
+    if (increment) {
+      await this.dbListRepo.increment({ id: tenantId }, field, 1);
+    } else {
+      await this.dbListRepo.decrement({ id: tenantId }, field, 1);
+    }
+  }
+
+  async updateTenantInfo(data: Partial<DbListEntity>) {
+    const tenantId = this.getTenantId();
+    await this.dbListRepo.update({ id: tenantId }, data);
+    return this.dbListRepo.findOne({ where: { id: tenantId } });
+  }
 }

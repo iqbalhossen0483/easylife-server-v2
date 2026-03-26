@@ -5,7 +5,11 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import { existsSync, unlinkSync } from 'fs';
+import { join } from 'path';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { NotesEntity } from 'src/entites/notes.entity';
+import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere, ILike } from 'typeorm';
@@ -26,6 +30,14 @@ export class UsersService {
     return bcrypt.hashSync(password, 10);
   }
 
+  private deleteOldImage(filename: string | null | undefined) {
+    if (!filename) return;
+    const filePath = join(process.cwd(), 'public', filename);
+    if (existsSync(filePath)) {
+      unlinkSync(filePath);
+    }
+  }
+
   async createUser(payload: CreateUserDto) {
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
 
@@ -42,6 +54,10 @@ export class UsersService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const newUser = userRepo.create({ ...payload, createdBy: currentUser });
     await userRepo.save(newUser);
+
+    // Increment tenant user count
+    await this.tenantDatabaseService.updateTenantCount('current_user', true);
+
     const { password, createdBy, ...rest } = newUser;
 
     return {
@@ -69,6 +85,13 @@ export class UsersService {
         name: true,
         address: true,
         designation: true,
+        profile: true,
+        haveMoney: true,
+        debt: true,
+        totalSale: true,
+        dueSale: true,
+        dueCollection: true,
+        deliveredOrder: true,
         createdAt: true,
         createdBy: {
           id: true,
@@ -131,25 +154,22 @@ export class UsersService {
     }
 
     if (payload.phone) {
-      const user = await this.getUser({ phone: payload.phone });
-      if (user) {
-        throw new ConflictException('User already exists');
+      const existing = await this.getUser({ phone: payload.phone });
+      if (existing && existing.id !== userId) {
+        throw new ConflictException('Phone number already in use');
       }
     }
 
     if (payload.password) {
-      const hashPassword = this.hashPass(payload.password);
-      payload.password = hashPassword;
+      payload.password = this.hashPass(payload.password);
     }
 
-    const updatedUserResult = await userRepo.update(
-      { id: userId },
-      Object.assign(user, payload),
-    );
-
-    if (updatedUserResult.affected === 0) {
-      throw new NotImplementedException('Something went wrong');
+    // Delete old profile image if new one is uploaded
+    if (payload.profile && user.profile) {
+      this.deleteOldImage(user.profile);
     }
+
+    await userRepo.update({ id: userId }, payload);
 
     return {
       success: true,
@@ -170,9 +190,50 @@ export class UsersService {
       throw new NotImplementedException('Something went wrong');
     }
 
+    // Decrement tenant user count
+    await this.tenantDatabaseService.updateTenantCount('current_user', false);
+
     return {
       success: true,
       message: 'User deleted successfully',
+    };
+  }
+
+  async getRecentActivity(userId: number) {
+    const user = await this.getUser({ id: userId });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Targets
+    const targetRepo = await this.tenantDatabaseService.getRepository(Target);
+    const targets = await targetRepo.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      take: 5,
+    });
+
+    // Notes
+    const noteRepo =
+      await this.tenantDatabaseService.getRepository(NotesEntity);
+    const notes = await noteRepo.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      take: 5,
+    });
+
+    // TODO: Add orders, collections, expenses when those modules are built
+
+    return {
+      success: true,
+      message: 'Recent activity fetched successfully',
+      data: {
+        targets,
+        notes,
+        orders: [],
+        collections: [],
+        expenses: [],
+      },
     };
   }
 }
