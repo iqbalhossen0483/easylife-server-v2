@@ -126,58 +126,57 @@ export class ReportService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const orders = await orderRepo.find({
-      where: {
-        created_at: Between(startDate, new Date()),
-        status: OrderStatus.DELIVERED,
-      },
-      select: { total_sale: true, created_at: true },
-      order: { created_at: 'ASC' },
-    });
-
-    // Group by date
-    const grouped: Record<string, number> = {};
-    for (const order of orders) {
-      const date = new Date(order.created_at).toISOString().split('T')[0];
-      grouped[date] = (grouped[date] ?? 0) + Number(order.total_sale);
-    }
-
-    const chart_data = Object.entries(grouped).map(([date, total]) => ({
-      date,
-      total_sale: total,
-    }));
+    // Use database GROUP BY instead of in-memory grouping
+    const chart_data = await orderRepo
+      .createQueryBuilder('order')
+      .select("TO_CHAR(order.created_at, 'YYYY-MM-DD')", 'date')
+      .addSelect('SUM(order.total_sale)', 'total_sale')
+      .where('order.created_at BETWEEN :start AND :end', {
+        start: startDate,
+        end: new Date(),
+      })
+      .andWhere('order.status = :status', { status: OrderStatus.DELIVERED })
+      .groupBy("TO_CHAR(order.created_at, 'YYYY-MM-DD')")
+      .orderBy('date', 'ASC')
+      .getRawMany();
 
     return {
       success: true,
       message: 'Chart data fetched',
-      data: chart_data,
+      data: chart_data.map((row: { date: string; total_sale: string }) => ({
+        date: row.date,
+        total_sale: Number(row.total_sale),
+      })),
     };
   }
 
-  async getPieChartData() {
+  async getPieChartData(start_date?: string, end_date?: string) {
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
-    const expenses = await expenseRepo.find({
-      where: { status: ExpenseStatus.APPROVED },
-      relations: { type: true },
-      select: { amount: true, type: { id: true, name: true } },
-    });
 
-    // Group by type
-    const grouped: Record<string, number> = {};
-    for (const exp of expenses) {
-      const name = exp.type?.name ?? 'Unknown';
-      grouped[name] = (grouped[name] ?? 0) + Number(exp.amount);
+    // Use database GROUP BY with optional date range filter
+    const qb = expenseRepo
+      .createQueryBuilder('expense')
+      .innerJoin('expense.type', 'type')
+      .select('type.name', 'category')
+      .addSelect('SUM(expense.amount)', 'total')
+      .where('expense.status = :status', { status: ExpenseStatus.APPROVED });
+
+    if (start_date && end_date) {
+      qb.andWhere('expense.created_at BETWEEN :start AND :end', {
+        start: new Date(start_date),
+        end: new Date(end_date + 'T23:59:59'),
+      });
     }
 
-    const pie_data = Object.entries(grouped).map(([name, total]) => ({
-      category: name,
-      total,
-    }));
+    const pie_data = await qb.groupBy('type.name').getRawMany();
 
     return {
       success: true,
       message: 'Pie chart data fetched',
-      data: pie_data,
+      data: pie_data.map((row: { category: string; total: string }) => ({
+        category: row.category,
+        total: Number(row.total),
+      })),
     };
   }
 

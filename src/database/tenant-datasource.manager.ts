@@ -8,11 +8,13 @@ import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DbListEntity } from 'src/entites/dbList.entity';
 import { JWT_Payload } from 'src/types/common';
-import { EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { EntityTarget, ObjectLiteral, QueryRunner, Repository } from 'typeorm';
 import { TenantConnectionManager } from './tenant-connection.manager';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TenantDatabaseService {
+  private cachedDbName: string | null = null;
+
   constructor(
     private readonly connectionManager: TenantConnectionManager,
     @Inject(REQUEST)
@@ -22,6 +24,8 @@ export class TenantDatabaseService {
   ) {}
 
   private async getDbName(): Promise<string> {
+    if (this.cachedDbName) return this.cachedDbName;
+
     const database = await this.dbListRepo.findOne({
       where: { id: this.request.tenantId },
     });
@@ -30,6 +34,7 @@ export class TenantDatabaseService {
       throw new UnauthorizedException('Authentication failed');
     }
 
+    this.cachedDbName = database.name;
     return database.name;
   }
 
@@ -40,6 +45,11 @@ export class TenantDatabaseService {
     return this.connectionManager.getRepository(dbName, entity);
   }
 
+  async createQueryRunner(): Promise<QueryRunner> {
+    const dbName = await this.getDbName();
+    return this.connectionManager.createQueryRunner(dbName);
+  }
+
   async getDataDatabase() {
     const database = await this.dbListRepo.findOne({
       where: { id: this.request.tenantId },
@@ -47,7 +57,6 @@ export class TenantDatabaseService {
     if (!database) {
       throw new UnauthorizedException('No organization found');
     }
-
     return database;
   }
 

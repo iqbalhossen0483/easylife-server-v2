@@ -7,6 +7,7 @@ import {
 } from 'src/entites/production.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere } from 'typeorm';
 import { CreateProductionDto, GetAllProductionDto } from './production.dto';
 
@@ -16,8 +17,6 @@ export class ProductionService {
 
   async createProduction(payload: CreateProductionDto, currentUserId: number) {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
-    const productionRepo =
-      await this.tenantDbService.getRepository(ProductionEntity);
 
     // Verify main product exists
     const mainProduct = await productRepo.findOne({
@@ -34,40 +33,59 @@ export class ProductionService {
       return pp;
     });
 
-    const production = productionRepo.create({
-      product_id: payload.product_id,
-      product_name: payload.product_name,
-      production: payload.production,
-      production_by: { id: currentUserId } as UserEntity,
-      components,
-    });
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const prodRepo = qr.manager.getRepository(ProductionEntity);
+      const prodProductRepo = qr.manager.getRepository(ProductEntity);
 
-    await productionRepo.save(production);
+      const production = prodRepo.create({
+        product_id: payload.product_id,
+        product_name: payload.product_name,
+        production: payload.production,
+        production_by: { id: currentUserId } as UserEntity,
+        components,
+      });
 
-    // Increase main product stock
-    await productRepo.increment(
-      { id: payload.product_id },
-      'stock',
-      payload.production,
-    );
-    await productRepo.increment(
-      { id: payload.product_id },
-      'production',
-      payload.production,
-    );
+      await prodRepo.save(production);
 
-    // Decrease component stocks
-    for (const comp of payload.components) {
-      await productRepo.decrement({ id: comp.product_id }, 'stock', comp.qty);
+      // Increase main product stock
+      await prodProductRepo.increment(
+        { id: payload.product_id },
+        'stock',
+        payload.production,
+      );
+      await prodProductRepo.increment(
+        { id: payload.product_id },
+        'production',
+        payload.production,
+      );
+
+      // Decrease component stocks
+      for (const comp of payload.components) {
+        await prodProductRepo.decrement(
+          { id: comp.product_id },
+          'stock',
+          comp.qty,
+        );
+      }
+
+      await qr.commitTransaction();
+
+      // TODO: Update stock reports when report entities are built
+
+      return {
+        success: true,
+        message: 'Production recorded successfully',
+        data: production,
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
     }
-
-    // TODO: Update stock reports when report entities are built
-
-    return {
-      success: true,
-      message: 'Production recorded successfully',
-      data: production,
-    };
   }
 
   async getAllProductions({
@@ -75,6 +93,7 @@ export class ProductionService {
     limit = 10,
     product_id,
   }: GetAllProductionDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
     const productionRepo =
       await this.tenantDbService.getRepository(ProductionEntity);

@@ -4,11 +4,10 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { ProductEntity } from 'src/entites/product.entity';
 import { API_Meta } from 'src/types/common';
+import { deleteFile, clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import {
   CreateProductDto,
@@ -20,14 +19,6 @@ import {
 export class ProductService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  private deleteOldImage(filename: string | null | undefined) {
-    if (!filename) return;
-    const filePath = join(process.cwd(), 'public', filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
-    }
-  }
-
   async createProduct(payload: CreateProductDto) {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
@@ -38,20 +29,34 @@ export class ProductService {
       throw new ConflictException('Product with this name already exists');
     }
 
-    const product = productRepo.create(payload);
-    await productRepo.save(product);
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const prodRepo = qr.manager.getRepository(ProductEntity);
+      const product = prodRepo.create(payload);
+      await prodRepo.save(product);
 
-    // Increment tenant product count
-    await this.tenantDbService.updateTenantCount('current_product', true);
+      // Increment tenant product count
+      await this.tenantDbService.updateTenantCount('current_product', true);
 
-    return {
-      success: true,
-      message: 'Product created successfully',
-      data: product,
-    };
+      await qr.commitTransaction();
+
+      return {
+        success: true,
+        message: 'Product created successfully',
+        data: product,
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 
   async getAllProducts({ page = 1, limit = 10, search }: GetAllProductDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
 
     const query: FindOptionsWhere<ProductEntity>[] = [];
@@ -123,7 +128,7 @@ export class ProductService {
 
     // Delete old profile image if new one is uploaded
     if (payload.profile && product.profile) {
-      this.deleteOldImage(product.profile);
+      await deleteFile(product.profile);
     }
 
     await productRepo.update({ id: productId }, payload);

@@ -11,6 +11,7 @@ import {
 } from 'src/entites/expense.entity';
 import { Designation, UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { clampLimit } from 'src/utils/file.util';
 import { Between, FindOptionsWhere } from 'typeorm';
 import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
 
@@ -75,7 +76,6 @@ export class ExpenseService {
 
   async approveExpense(expenseId: number, currentUserId: number) {
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
 
     const expense = await expenseRepo.findOne({
       where: { id: expenseId },
@@ -87,25 +87,40 @@ export class ExpenseService {
       throw new BadRequestException('Expense is not pending');
     }
 
-    expense.status = ExpenseStatus.APPROVED;
-    expense.approved_by = { id: currentUserId } as UserEntity;
-    expense.approved_at = new Date();
-    await expenseRepo.save(expense);
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const expRepo = qr.manager.getRepository(ExpenseEntity);
+      const userRepo = qr.manager.getRepository(UserEntity);
 
-    // Update expense creator's balance
-    const creatorId = expense.created_by.id;
-    await userRepo.decrement(
-      { id: creatorId },
-      'have_money',
-      Number(expense.amount),
-    );
+      expense.status = ExpenseStatus.APPROVED;
+      expense.approved_by = { id: currentUserId } as UserEntity;
+      expense.approved_at = new Date();
+      await expRepo.save(expense);
 
-    // TODO: Update cash reports
+      // Update expense creator's balance
+      const creatorId = expense.created_by.id;
+      await userRepo.decrement(
+        { id: creatorId },
+        'have_money',
+        Number(expense.amount),
+      );
 
-    return {
-      success: true,
-      message: 'Expense approved successfully',
-    };
+      await qr.commitTransaction();
+
+      // TODO: Update cash reports
+
+      return {
+        success: true,
+        message: 'Expense approved successfully',
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 
   async rejectExpense(expenseId: number) {
@@ -134,6 +149,7 @@ export class ExpenseService {
     start_date,
     end_date,
   }: GetAllExpenseDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
 

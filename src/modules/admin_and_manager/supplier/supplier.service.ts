@@ -4,11 +4,10 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { API_Meta } from 'src/types/common';
+import { deleteFile, clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import {
   CreateSupplierDto,
@@ -19,14 +18,6 @@ import {
 @Injectable()
 export class SupplierService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
-
-  private deleteOldImage(filename: string | null | undefined) {
-    if (!filename) return;
-    const filePath = join(process.cwd(), 'public', filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
-    }
-  }
 
   async createSupplier(payload: CreateSupplierDto) {
     const supplierRepo =
@@ -50,6 +41,7 @@ export class SupplierService {
   }
 
   async getAllSuppliers({ page = 1, limit = 10, search }: GetAllSupplierDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
 
     const query: FindOptionsWhere<SupplierEntity>[] = [];
@@ -128,7 +120,7 @@ export class SupplierService {
     }
 
     if (payload.profile && supplier.profile) {
-      this.deleteOldImage(supplier.profile);
+      await deleteFile(supplier.profile);
     }
 
     await supplierRepo.update({ id: supplierId }, payload);

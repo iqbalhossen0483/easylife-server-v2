@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CustomerEntity } from 'src/entites/customer.entity';
 import {
@@ -37,7 +37,13 @@ import {
   TransactionEntity,
 } from 'src/entites/transaction.entity';
 import { UserEntity } from 'src/entites/user.entity';
-import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityTarget,
+  ObjectLiteral,
+  QueryRunner,
+  Repository,
+} from 'typeorm';
 
 export const TENANT_ENTITIES = [
   UserEntity,
@@ -68,17 +74,34 @@ export const TENANT_ENTITIES = [
 ];
 
 @Injectable()
-export class TenantConnectionManager {
+export class TenantConnectionManager implements OnModuleDestroy {
   private dataSources = new Map<string, DataSource>();
+  private initLocks = new Map<string, Promise<DataSource>>();
 
   constructor(private readonly configService: ConfigService) {}
 
   async getDataSource(dbName: string): Promise<DataSource> {
-    if (this.dataSources.has(dbName)) {
-      const ds = this.dataSources.get(dbName)!;
-      if (ds.isInitialized) return ds;
-      this.dataSources.delete(dbName);
+    // Return cached if initialized
+    const cached = this.dataSources.get(dbName);
+    if (cached?.isInitialized) return cached;
+
+    // Prevent duplicate initialization (race condition guard)
+    const existingLock = this.initLocks.get(dbName);
+    if (existingLock) return existingLock;
+
+    const initPromise = this.createDataSource(dbName);
+    this.initLocks.set(dbName, initPromise);
+
+    try {
+      const ds = await initPromise;
+      return ds;
+    } finally {
+      this.initLocks.delete(dbName);
     }
+  }
+
+  private async createDataSource(dbName: string): Promise<DataSource> {
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
 
     const dataSource = new DataSource({
       type: 'postgres',
@@ -88,12 +111,16 @@ export class TenantConnectionManager {
       password: this.configService.get<string>('DB_PASS'),
       database: dbName,
       entities: TENANT_ENTITIES,
-      synchronize: true,
+      synchronize: !isProd,
+      extra: {
+        max: 10,
+        min: 2,
+        idleTimeoutMillis: 30000,
+      },
     });
 
     await dataSource.initialize();
     this.dataSources.set(dbName, dataSource);
-
     return dataSource;
   }
 
@@ -103,5 +130,21 @@ export class TenantConnectionManager {
   ): Promise<Repository<T>> {
     const ds = await this.getDataSource(dbName);
     return ds.getRepository<T>(entity);
+  }
+
+  async createQueryRunner(dbName: string): Promise<QueryRunner> {
+    const ds = await this.getDataSource(dbName);
+    return ds.createQueryRunner();
+  }
+
+  async onModuleDestroy() {
+    const closePromises: Promise<void>[] = [];
+    for (const [, ds] of this.dataSources) {
+      if (ds.isInitialized) {
+        closePromises.push(ds.destroy());
+      }
+    }
+    await Promise.allSettled(closePromises);
+    this.dataSources.clear();
   }
 }

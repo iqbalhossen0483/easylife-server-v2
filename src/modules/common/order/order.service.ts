@@ -13,10 +13,10 @@ import {
   OrderStatus,
 } from 'src/entites/order.entity';
 import { ProductEntity } from 'src/entites/product.entity';
-import { Target } from 'src/entites/target.entity';
-import { CommissionStatus } from 'src/entites/target.entity';
+import { CommissionStatus, Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { clampLimit } from 'src/utils/file.util';
 import { Between, FindOptionsWhere } from 'typeorm';
 import {
   CollectPaymentDto,
@@ -85,7 +85,8 @@ export class OrderService {
     start_date,
     end_date,
   }: GetAllOrderDto) {
-    const skip = (page - 1) * limit;
+    const take = clampLimit(limit);
+    const skip = (page - 1) * take;
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
 
     const query: FindOptionsWhere<OrderEntity> = {};
@@ -114,15 +115,15 @@ export class OrderService {
         delivered_by: { id: true, name: true },
       },
       order: { created_at: 'DESC' },
-      take: limit,
+      take,
       skip,
     });
 
     const meta: API_Meta = {
       total,
-      limit,
+      limit: take,
       currentPage: page,
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / take),
     };
 
     return {
@@ -222,86 +223,98 @@ export class OrderService {
   }
 
   async deliverOrder(orderId: number) {
-    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const order = await orderRepo.findOne({
-      where: { id: orderId },
-      relations: {
-        shop: true,
-        delivered_by: true,
-        created_by: true,
-        products: true,
-      },
-    });
-    if (!order) throw new NotFoundException('Order not found');
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    if (order.status === OrderStatus.DELIVERED) {
-      throw new BadRequestException('Order already delivered');
-    }
+    try {
+      const orderRepo = qr.manager.getRepository(OrderEntity);
+      const order = await orderRepo.findOne({
+        where: { id: orderId },
+        relations: {
+          shop: true,
+          delivered_by: true,
+          created_by: true,
+          products: true,
+        },
+      });
+      if (!order) throw new NotFoundException('Order not found');
 
-    // Mark as delivered
-    order.status = OrderStatus.DELIVERED;
-    await orderRepo.save(order);
+      if (order.status === OrderStatus.DELIVERED) {
+        throw new BadRequestException('Order already delivered');
+      }
 
-    // --- Side effects ---
+      // Mark as delivered
+      order.status = OrderStatus.DELIVERED;
+      await orderRepo.save(order);
 
-    // 8.14 Update customer totals
-    const customerRepo =
-      await this.tenantDbService.getRepository(CustomerEntity);
-    await customerRepo.increment(
-      { id: order.shop.id },
-      'total_sale',
-      order.total_sale,
-    );
-    await customerRepo.increment({ id: order.shop.id }, 'due_sale', order.due);
-    await customerRepo.increment({ id: order.shop.id }, 'due', order.due);
-    await customerRepo.update(
-      { id: order.shop.id },
-      { last_order: new Date() },
-    );
-
-    // 8.15 Update product stock
-    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
-    for (const item of order.products) {
-      await productRepo.decrement({ id: item.product_id }, 'stock', item.qty);
-      await productRepo.increment({ id: item.product_id }, 'sold', item.qty);
-    }
-
-    // 8.16 Update user stats
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    if (order.delivered_by) {
-      await userRepo.increment(
-        { id: order.delivered_by.id },
-        'delivered_order',
-        1,
-      );
-      await userRepo.increment(
-        { id: order.delivered_by.id },
+      // Update customer totals
+      const customerRepo = qr.manager.getRepository(CustomerEntity);
+      await customerRepo.increment(
+        { id: order.shop.id },
         'total_sale',
         order.total_sale,
       );
-      await userRepo.increment(
-        { id: order.delivered_by.id },
+      await customerRepo.increment(
+        { id: order.shop.id },
         'due_sale',
         order.due,
       );
-      if (order.payment > 0) {
+      await customerRepo.increment({ id: order.shop.id }, 'due', order.due);
+      await customerRepo.update(
+        { id: order.shop.id },
+        { last_order: new Date() },
+      );
+
+      // Update product stock (batch via query builder)
+      const productRepo = qr.manager.getRepository(ProductEntity);
+      for (const item of order.products) {
+        await productRepo.decrement({ id: item.product_id }, 'stock', item.qty);
+        await productRepo.increment({ id: item.product_id }, 'sold', item.qty);
+      }
+
+      // Update user stats
+      const userRepo = qr.manager.getRepository(UserEntity);
+      if (order.delivered_by) {
         await userRepo.increment(
           { id: order.delivered_by.id },
-          'have_money',
-          order.payment,
+          'delivered_order',
+          1,
         );
+        await userRepo.increment(
+          { id: order.delivered_by.id },
+          'total_sale',
+          order.total_sale,
+        );
+        await userRepo.increment(
+          { id: order.delivered_by.id },
+          'due_sale',
+          order.due,
+        );
+        if (order.payment > 0) {
+          await userRepo.increment(
+            { id: order.delivered_by.id },
+            'have_money',
+            order.payment,
+          );
+        }
       }
+
+      // Update sales targets
+      await this.updateSalesTargets(order, qr.manager);
+
+      await qr.commitTransaction();
+
+      return {
+        success: true,
+        message: 'Order delivered successfully',
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
     }
-
-    // 8.19 Update sales targets
-    await this.updateSalesTargets(order);
-
-    // 8.17 & 8.18 TODO: Update cash/stock reports when report entities are built
-
-    return {
-      success: true,
-      message: 'Order delivered successfully',
-    };
   }
 
   async collectPayment(
@@ -309,91 +322,96 @@ export class OrderService {
     payload: CollectPaymentDto,
     currentUserId: number,
   ) {
-    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const order = await orderRepo.findOne({
-      where: { id: orderId },
-      relations: { shop: true, delivered_by: true },
-    });
-    if (!order) throw new NotFoundException('Order not found');
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
 
-    if (order.status !== OrderStatus.DELIVERED) {
-      throw new BadRequestException(
-        'Order must be delivered before collecting payment',
-      );
-    }
+    try {
+      const orderRepo = qr.manager.getRepository(OrderEntity);
+      const order = await orderRepo.findOne({
+        where: { id: orderId },
+        relations: { shop: true, delivered_by: true },
+      });
+      if (!order) throw new NotFoundException('Order not found');
 
-    const collectionAmount = payload.amount;
-    const discountAmount = payload.discount ?? 0;
-    const totalReceived = collectionAmount + discountAmount;
+      if (order.status !== OrderStatus.DELIVERED) {
+        throw new BadRequestException(
+          'Order must be delivered before collecting payment',
+        );
+      }
 
-    if (totalReceived > order.due) {
-      throw new BadRequestException('Amount exceeds remaining due');
-    }
+      const collectionAmount = payload.amount;
+      const discountAmount = payload.discount ?? 0;
+      const totalReceived = collectionAmount + discountAmount;
 
-    // Create collection record
-    const collectionRepo =
-      await this.tenantDbService.getRepository(CollectionEntity);
+      if (totalReceived > Number(order.due)) {
+        throw new BadRequestException('Amount exceeds remaining due');
+      }
 
-    const collection = collectionRepo.create({
-      order,
-      receiver: { id: currentUserId } as UserEntity,
-      amount: collectionAmount,
-      discount: discountAmount,
-      notes: payload.notes,
-    });
-    await collectionRepo.save(collection);
+      // Create collection record
+      const collectionRepo = qr.manager.getRepository(CollectionEntity);
+      const collection = collectionRepo.create({
+        order,
+        receiver: { id: currentUserId } as UserEntity,
+        amount: collectionAmount,
+        discount: discountAmount,
+        notes: payload.notes,
+      });
+      await collectionRepo.save(collection);
 
-    // Update order
-    order.payment = Number(order.payment) + collectionAmount;
-    order.discount = Number(order.discount) + discountAmount;
-    order.due = Number(order.due) - totalReceived;
-    await orderRepo.save(order);
+      // Update order
+      order.payment = Number(order.payment) + collectionAmount;
+      order.discount = Number(order.discount) + discountAmount;
+      order.due = Number(order.due) - totalReceived;
+      await orderRepo.save(order);
 
-    // Update customer
-    const customerRepo =
-      await this.tenantDbService.getRepository(CustomerEntity);
-    await customerRepo.increment(
-      { id: order.shop.id },
-      'collection',
-      collectionAmount,
-    );
-    if (discountAmount > 0) {
+      // Update customer
+      const customerRepo = qr.manager.getRepository(CustomerEntity);
       await customerRepo.increment(
         { id: order.shop.id },
-        'discount',
-        discountAmount,
-      );
-    }
-    await customerRepo.decrement({ id: order.shop.id }, 'due', totalReceived);
-
-    // Update receiver user balance
-    if (collectionAmount > 0) {
-      const userRepo = await this.tenantDbService.getRepository(UserEntity);
-      await userRepo.increment(
-        { id: currentUserId },
-        'have_money',
+        'collection',
         collectionAmount,
       );
-      await userRepo.increment(
-        { id: currentUserId },
-        'due_collection',
-        collectionAmount,
-      );
+      if (discountAmount > 0) {
+        await customerRepo.increment(
+          { id: order.shop.id },
+          'discount',
+          discountAmount,
+        );
+      }
+      await customerRepo.decrement({ id: order.shop.id }, 'due', totalReceived);
+
+      // Update receiver user balance
+      if (collectionAmount > 0) {
+        const userRepo = qr.manager.getRepository(UserEntity);
+        await userRepo.increment(
+          { id: currentUserId },
+          'have_money',
+          collectionAmount,
+        );
+        await userRepo.increment(
+          { id: currentUserId },
+          'due_collection',
+          collectionAmount,
+        );
+      }
+
+      await qr.commitTransaction();
+
+      return {
+        success: true,
+        message: 'Payment collected successfully',
+        data: {
+          collection_id: collection.id,
+          remaining_due: order.due,
+        },
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
     }
-
-    // 8.20 Auto-create discount expense
-    // TODO: Create expense record when expense module is built
-
-    // 8.17 TODO: Update cash reports when report entities are built
-
-    return {
-      success: true,
-      message: 'Payment collected successfully',
-      data: {
-        collection_id: collection.id,
-        remaining_due: order.due,
-      },
-    };
   }
 
   async deleteOrder(orderId: number) {
@@ -418,8 +436,11 @@ export class OrderService {
 
   // --- Private helpers ---
 
-  private async updateSalesTargets(order: OrderEntity) {
-    const targetRepo = await this.tenantDbService.getRepository(Target);
+  private async updateSalesTargets(
+    order: OrderEntity,
+    manager: import('typeorm').EntityManager,
+  ) {
+    const targetRepo = manager.getRepository(Target);
 
     // Update delivery user's running target
     if (order.delivered_by) {

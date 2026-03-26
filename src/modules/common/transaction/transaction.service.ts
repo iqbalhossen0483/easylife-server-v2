@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
@@ -19,6 +20,8 @@ import { BalanceTransferDto } from './transaction.dto';
 
 @Injectable()
 export class TransactionService {
+  private readonly logger = new Logger(TransactionService.name);
+
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
   async initiateTransfer(payload: BalanceTransferDto, currentUserId: number) {
@@ -57,8 +60,6 @@ export class TransactionService {
     const pendingRepo = await this.tenantDbService.getRepository(
       PendingBalanceTransferEntity,
     );
-    const txRepo = await this.tenantDbService.getRepository(TransactionEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
 
     const pending = await pendingRepo.findOne({
       where: { id: transferId },
@@ -72,89 +73,105 @@ export class TransactionService {
       );
     }
 
-    // Create transaction record
-    const transaction = txRepo.create({
-      from_user: pending.from_user,
-      to_user: pending.to_user,
-      purpose: pending.purpose,
-      amount: pending.amount,
-      notes: pending.notes,
-    });
-    await txRepo.save(transaction);
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const txRepo = qr.manager.getRepository(TransactionEntity);
+      const userRepo = qr.manager.getRepository(UserEntity);
+      const pendRepo = qr.manager.getRepository(PendingBalanceTransferEntity);
 
-    // Update user balances based on purpose
-    const amount = Number(pending.amount);
+      // Create transaction record
+      const transaction = txRepo.create({
+        from_user: pending.from_user,
+        to_user: pending.to_user,
+        purpose: pending.purpose,
+        amount: pending.amount,
+        notes: pending.notes,
+      });
+      await txRepo.save(transaction);
 
-    switch (pending.purpose) {
-      case TransferPurpose.SALARY:
-        await userRepo.decrement(
-          { id: pending.from_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.increment(
-          { id: pending.to_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.increment(
-          { id: pending.to_user.id },
-          'get_salary',
-          amount,
-        );
-        await this.createAutoExpense(pending.from_user, 'Salary', amount);
-        break;
+      // Update user balances based on purpose
+      const amount = Number(pending.amount);
 
-      case TransferPurpose.INCENTIVE:
-        await userRepo.decrement(
-          { id: pending.from_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.increment(
-          { id: pending.to_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.increment(
-          { id: pending.to_user.id },
-          'incentive',
-          amount,
-        );
-        await this.createAutoExpense(pending.from_user, 'Incentive', amount);
-        break;
+      switch (pending.purpose) {
+        case TransferPurpose.SALARY:
+          await userRepo.decrement(
+            { id: pending.from_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.increment(
+            { id: pending.to_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.increment(
+            { id: pending.to_user.id },
+            'get_salary',
+            amount,
+          );
+          await this.createAutoExpense(pending.from_user, 'Salary', amount);
+          break;
 
-      case TransferPurpose.DEBT_PAYMENT:
-        await userRepo.decrement(
-          { id: pending.from_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.decrement({ id: pending.to_user.id }, 'debt', amount);
-        break;
+        case TransferPurpose.INCENTIVE:
+          await userRepo.decrement(
+            { id: pending.from_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.increment(
+            { id: pending.to_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.increment(
+            { id: pending.to_user.id },
+            'incentive',
+            amount,
+          );
+          await this.createAutoExpense(pending.from_user, 'Incentive', amount);
+          break;
 
-      case TransferPurpose.PURCHASE_PRODUCT:
-      case TransferPurpose.OTHER:
-        await userRepo.decrement(
-          { id: pending.from_user.id },
-          'have_money',
-          amount,
-        );
-        await userRepo.increment(
-          { id: pending.to_user.id },
-          'have_money',
-          amount,
-        );
-        break;
+        case TransferPurpose.DEBT_PAYMENT:
+          await userRepo.decrement(
+            { id: pending.from_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.decrement({ id: pending.to_user.id }, 'debt', amount);
+          break;
+
+        case TransferPurpose.PURCHASE_PRODUCT:
+        case TransferPurpose.OTHER:
+          await userRepo.decrement(
+            { id: pending.from_user.id },
+            'have_money',
+            amount,
+          );
+          await userRepo.increment(
+            { id: pending.to_user.id },
+            'have_money',
+            amount,
+          );
+          break;
+      }
+
+      // Remove pending record
+      await pendRepo.delete({ id: transferId });
+
+      await qr.commitTransaction();
+
+      return {
+        success: true,
+        message: 'Transfer accepted and completed',
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
     }
-
-    // Remove pending record
-    await pendingRepo.delete({ id: transferId });
-
-    return {
-      success: true,
-      message: 'Transfer accepted and completed',
-    };
   }
 
   async declineTransfer(transferId: number, currentUserId: number) {
@@ -195,6 +212,7 @@ export class TransactionService {
         to_user: { id: true, name: true },
       },
       order: { created_at: 'DESC' },
+      take: 50,
     });
 
     return {
@@ -204,8 +222,9 @@ export class TransactionService {
     };
   }
 
-  async getTransactionHistory() {
+  async getTransactionHistory(page: number = 1, limit: number = 50) {
     const txRepo = await this.tenantDbService.getRepository(TransactionEntity);
+    const skip = (page - 1) * limit;
 
     const transactions = await txRepo.find({
       relations: { from_user: true, to_user: true },
@@ -214,7 +233,8 @@ export class TransactionService {
         to_user: { id: true, name: true },
       },
       order: { created_at: 'DESC' },
-      take: 50,
+      take: limit,
+      skip,
     });
 
     return {
@@ -251,8 +271,12 @@ export class TransactionService {
         note: `Auto-created from ${categoryName.toLowerCase()} transfer`,
       });
       await expenseRepo.save(expense);
-    } catch {
+    } catch (err) {
       // Non-critical: don't fail the transfer if auto-expense fails
+      this.logger.error(
+        `Failed to create auto-expense for ${categoryName}: ${err.message}`,
+        err.stack,
+      );
     }
   }
 }

@@ -5,13 +5,12 @@ import {
   NotImplementedException,
 } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { NotesEntity } from 'src/entites/notes.entity';
 import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { deleteFile, clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
 
@@ -30,14 +29,6 @@ export class UsersService {
     return bcrypt.hashSync(password, 10);
   }
 
-  private deleteOldImage(filename: string | null | undefined) {
-    if (!filename) return;
-    const filePath = join(process.cwd(), 'public', filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
-    }
-  }
-
   async createUser(payload: CreateUserDto, currentUserId: number) {
     const user = await this.getUser({ phone: payload.phone });
     if (user) {
@@ -47,26 +38,39 @@ export class UsersService {
     const hashPassword = this.hashPass(payload.password);
     payload.password = hashPassword;
 
-    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
-    const newUser = userRepo.create({
-      ...payload,
-      created_by: { id: currentUserId } as UserEntity,
-    });
-    await userRepo.save(newUser);
+    const qr = await this.tenantDatabaseService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const userRepo = qr.manager.getRepository(UserEntity);
+      const newUser = userRepo.create({
+        ...payload,
+        created_by: { id: currentUserId } as UserEntity,
+      });
+      await userRepo.save(newUser);
 
-    // Increment tenant user count
-    await this.tenantDatabaseService.updateTenantCount('current_user', true);
+      // Increment tenant user count
+      await this.tenantDatabaseService.updateTenantCount('current_user', true);
 
-    const { password, created_by, ...rest } = newUser;
+      await qr.commitTransaction();
 
-    return {
-      success: true,
-      message: 'User created successfully',
-      data: rest,
-    };
+      const { password, created_by, ...rest } = newUser;
+
+      return {
+        success: true,
+        message: 'User created successfully',
+        data: rest,
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 
   async getAllUser({ page = 1, limit = 10, search }: getAllUserDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
 
     const query: FindOptionsWhere<UserEntity>[] = [];
@@ -165,7 +169,7 @@ export class UsersService {
 
     // Delete old profile image if new one is uploaded
     if (payload.profile && user.profile) {
-      this.deleteOldImage(user.profile);
+      await deleteFile(user.profile);
     }
 
     await userRepo.update({ id: userId }, payload);

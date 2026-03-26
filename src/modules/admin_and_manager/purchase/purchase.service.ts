@@ -13,6 +13,7 @@ import {
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere } from 'typeorm';
 import {
   CreatePurchaseDto,
@@ -31,9 +32,6 @@ export class PurchaseService {
   ) {
     const supplierRepo =
       await this.tenantDbService.getRepository(SupplierEntity);
-    const purchaseRepo =
-      await this.tenantDbService.getRepository(PurchaseEntity);
-    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const supplier = await supplierRepo.findOne({
       where: { id: payload.supplier_id },
@@ -53,59 +51,75 @@ export class PurchaseService {
       return pp;
     });
 
-    const purchase = purchaseRepo.create({
-      supplier,
-      purchased_by: { id: currentUserId } as UserEntity,
-      total_amount: payload.total_amount,
-      payment: paymentAmount,
-      due: dueAmount,
-      payment_info: payload.payment_info,
-      files: fileNames.length > 0 ? fileNames : undefined,
-      products: purchaseProducts,
-    });
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const purchaseRepo = qr.manager.getRepository(PurchaseEntity);
+      const productRepo = qr.manager.getRepository(ProductEntity);
+      const supRepo = qr.manager.getRepository(SupplierEntity);
 
-    await purchaseRepo.save(purchase);
+      const purchase = purchaseRepo.create({
+        supplier,
+        purchased_by: { id: currentUserId } as UserEntity,
+        total_amount: payload.total_amount,
+        payment: paymentAmount,
+        due: dueAmount,
+        payment_info: payload.payment_info,
+        files: fileNames.length > 0 ? fileNames : undefined,
+        products: purchaseProducts,
+      });
 
-    // Update supplier financials
-    await supplierRepo.increment(
-      { id: supplier.id },
-      'total_purchased',
-      payload.total_amount,
-    );
-    await supplierRepo.increment(
-      { id: supplier.id },
-      'give_amount',
-      paymentAmount,
-    );
-    await supplierRepo.increment({ id: supplier.id }, 'debt_amount', dueAmount);
+      await purchaseRepo.save(purchase);
 
-    // Update product stock
-    for (const item of payload.products) {
-      await productRepo.increment({ id: item.product_id }, 'stock', item.qty);
-      await productRepo.increment(
-        { id: item.product_id },
-        'purchased',
-        item.qty,
+      // Update supplier financials
+      await supRepo.increment(
+        { id: supplier.id },
+        'total_purchased',
+        payload.total_amount,
       );
-    }
-
-    // Update user cash balance
-    if (paymentAmount > 0) {
-      const userRepo = await this.tenantDbService.getRepository(UserEntity);
-      await userRepo.decrement(
-        { id: currentUserId },
-        'have_money',
+      await supRepo.increment(
+        { id: supplier.id },
+        'give_amount',
         paymentAmount,
       );
+      await supRepo.increment({ id: supplier.id }, 'debt_amount', dueAmount);
+
+      // Update product stock
+      for (const item of payload.products) {
+        await productRepo.increment({ id: item.product_id }, 'stock', item.qty);
+        await productRepo.increment(
+          { id: item.product_id },
+          'purchased',
+          item.qty,
+        );
+      }
+
+      // Update user cash balance
+      if (paymentAmount > 0) {
+        const userRepo = qr.manager.getRepository(UserEntity);
+        await userRepo.decrement(
+          { id: currentUserId },
+          'have_money',
+          paymentAmount,
+        );
+      }
+
+      await qr.commitTransaction();
+
+      // TODO: Create transaction history, update cash/stock reports
+
+      return {
+        success: true,
+        message: 'Purchase recorded successfully',
+        data: purchase,
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
     }
-
-    // TODO: Create transaction history, update cash/stock reports
-
-    return {
-      success: true,
-      message: 'Purchase recorded successfully',
-      data: purchase,
-    };
   }
 
   async getAllPurchases({
@@ -113,6 +127,7 @@ export class PurchaseService {
     limit = 10,
     supplier_id,
   }: GetAllPurchaseDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
     const purchaseRepo =
       await this.tenantDbService.getRepository(PurchaseEntity);
@@ -164,53 +179,61 @@ export class PurchaseService {
       throw new BadRequestException('Amount exceeds remaining due');
     }
 
-    // Create payment record
-    const pcRepo = await this.tenantDbService.getRepository(
-      PurchaseCollectionEntity,
-    );
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      // Create payment record
+      const pcRepo = qr.manager.getRepository(PurchaseCollectionEntity);
+      const collection = pcRepo.create({
+        purchase,
+        sender: { id: currentUserId } as UserEntity,
+        amount: payload.amount,
+        notes: payload.notes,
+      });
+      await pcRepo.save(collection);
 
-    const collection = pcRepo.create({
-      purchase,
-      sender: { id: currentUserId } as UserEntity,
-      amount: payload.amount,
-      notes: payload.notes,
-    });
-    await pcRepo.save(collection);
+      // Update purchase
+      const purchRepo = qr.manager.getRepository(PurchaseEntity);
+      purchase.payment = Number(purchase.payment) + payload.amount;
+      purchase.due = Number(purchase.due) - payload.amount;
+      await purchRepo.save(purchase);
 
-    // Update purchase
-    purchase.payment = Number(purchase.payment) + payload.amount;
-    purchase.due = Number(purchase.due) - payload.amount;
-    await purchaseRepo.save(purchase);
+      // Update supplier
+      const supRepo = qr.manager.getRepository(SupplierEntity);
+      await supRepo.increment(
+        { id: purchase.supplier.id },
+        'give_amount',
+        payload.amount,
+      );
+      await supRepo.decrement(
+        { id: purchase.supplier.id },
+        'debt_amount',
+        payload.amount,
+      );
 
-    // Update supplier
-    const supplierRepo =
-      await this.tenantDbService.getRepository(SupplierEntity);
-    await supplierRepo.increment(
-      { id: purchase.supplier.id },
-      'give_amount',
-      payload.amount,
-    );
-    await supplierRepo.decrement(
-      { id: purchase.supplier.id },
-      'debt_amount',
-      payload.amount,
-    );
+      // Update sender balance
+      const userRepo = qr.manager.getRepository(UserEntity);
+      await userRepo.decrement(
+        { id: currentUserId },
+        'have_money',
+        payload.amount,
+      );
 
-    // Update user balance
-    // Update sender balance
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    await userRepo.decrement(
-      { id: currentUserId },
-      'have_money',
-      payload.amount,
-    );
+      await qr.commitTransaction();
 
-    // TODO: Update cash reports
+      // TODO: Update cash reports
 
-    return {
-      success: true,
-      message: 'Supplier payment recorded successfully',
-      data: { remaining_due: purchase.due },
-    };
+      return {
+        success: true,
+        message: 'Supplier payment recorded successfully',
+        data: { remaining_due: purchase.due },
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 }

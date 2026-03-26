@@ -83,7 +83,7 @@ export class TargetService {
 
     if (user.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [user.push_token as string],
+        tokens: [String(user.push_token)],
         title: 'New Performance Target Assigned',
         body: `A new performance target has been assigned to you.`,
         data: { targetId: target.id },
@@ -155,7 +155,7 @@ export class TargetService {
 
     if (targetUser.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [targetUser.push_token as string],
+        tokens: [String(targetUser.push_token)],
         title: 'Target Update Notification',
         body: `Your assigned target has been revised. Kindly check your dashboard for updates.`,
         data: { targetId: target.id },
@@ -274,22 +274,34 @@ export class TargetService {
     };
   }
 
-  async getPendingCommissions() {
+  async getPendingCommissions(page: number = 1, limit: number = 20) {
+    const skip = (page - 1) * limit;
     const pcRepo = await this.tenantDatabaseService.getRepository(
       PendingCommissionEntity,
     );
-    const commissions = await pcRepo.find({
+
+    const [commissions, total] = await pcRepo.findAndCount({
       relations: { user: true, target: true },
       select: {
         user: { id: true, name: true, phone: true },
       },
       order: { created_at: 'DESC' },
+      take: limit,
+      skip,
     });
+
+    const meta: API_Meta = {
+      total,
+      limit,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    };
 
     return {
       success: true,
       message: 'Pending commissions fetched successfully',
       data: commissions,
+      meta,
     };
   }
 

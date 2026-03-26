@@ -4,12 +4,11 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { existsSync, unlinkSync } from 'fs';
-import { join } from 'path';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { CustomerEntity } from 'src/entites/customer.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { API_Meta } from 'src/types/common';
+import { deleteFile, clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import {
   CreateCustomerDto,
@@ -20,14 +19,6 @@ import {
 @Injectable()
 export class CustomerService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
-
-  private deleteOldImage(filename: string | null | undefined) {
-    if (!filename) return;
-    const filePath = join(process.cwd(), 'public', filename);
-    if (existsSync(filePath)) {
-      unlinkSync(filePath);
-    }
-  }
 
   async createCustomer(payload: CreateCustomerDto, currentUserId: number) {
     const customerRepo =
@@ -40,25 +31,39 @@ export class CustomerService {
       throw new ConflictException('Customer with this phone already exists');
     }
 
-    const customer = customerRepo.create({
-      ...payload,
-      added_by: { id: currentUserId } as UserEntity,
-    });
-    await customerRepo.save(customer);
+    const qr = await this.tenantDbService.createQueryRunner();
+    await qr.connect();
+    await qr.startTransaction();
+    try {
+      const custRepo = qr.manager.getRepository(CustomerEntity);
+      const customer = custRepo.create({
+        ...payload,
+        added_by: { id: currentUserId } as UserEntity,
+      });
+      await custRepo.save(customer);
 
-    // Increment tenant customer count
-    await this.tenantDbService.updateTenantCount('current_customer', true);
+      // Increment tenant customer count
+      await this.tenantDbService.updateTenantCount('current_customer', true);
 
-    const { added_by, ...rest } = customer;
+      await qr.commitTransaction();
 
-    return {
-      success: true,
-      message: 'Customer created successfully',
-      data: rest,
-    };
+      const { added_by, ...rest } = customer;
+
+      return {
+        success: true,
+        message: 'Customer created successfully',
+        data: rest,
+      };
+    } catch (err) {
+      await qr.rollbackTransaction();
+      throw err;
+    } finally {
+      await qr.release();
+    }
   }
 
   async getAllCustomers({ page = 1, limit = 10, search }: GetAllCustomerDto) {
+    limit = clampLimit(limit);
     const skip = (page - 1) * limit;
 
     const query: FindOptionsWhere<CustomerEntity>[] = [];
@@ -168,7 +173,7 @@ export class CustomerService {
 
     // Delete old profile image if new one is uploaded
     if (payload.profile && customer.profile) {
-      this.deleteOldImage(customer.profile);
+      await deleteFile(customer.profile);
     }
 
     await customerRepo.update({ id: customerId }, payload);
