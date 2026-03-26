@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 58 / 155 tasks completed (37%)
+## Progress: 70 / 155 tasks completed (45%)
 
 ---
 
@@ -73,18 +73,18 @@
 
 ## 5. Customer Management
 
-- [ ] 5.1 Create CustomerEntity with all fields
-- [ ] 5.2 Create CreateCustomerDto with validation
-- [ ] 5.3 Create UpdateCustomerDto (partial)
-- [ ] 5.4 Create GetAllCustomerDto (pagination + search)
-- [ ] 5.5 Implement create customer endpoint (POST /customer/create)
-- [ ] 5.6 Implement list customers endpoint (GET /customer/all)
-- [ ] 5.7 Implement get single customer endpoint with order history
-- [ ] 5.8 Implement update customer endpoint (PUT /customer/update/:id)
-- [ ] 5.9 Implement soft delete customer endpoint
-- [ ] 5.10 Add profile image upload on create/update
-- [ ] 5.11 Add customer financial fields (totalSale, dueSale, due, collection, discount)
-- [ ] 5.12 Register CustomerModule in AppModule
+- [x] 5.1 Create CustomerEntity with all fields
+- [x] 5.2 Create CreateCustomerDto with validation
+- [x] 5.3 Create UpdateCustomerDto (partial)
+- [x] 5.4 Create GetAllCustomerDto (pagination + search)
+- [x] 5.5 Implement create customer endpoint (POST /customer/create)
+- [x] 5.6 Implement list customers endpoint (GET /customer/all)
+- [x] 5.7 Implement get single customer endpoint with order history
+- [x] 5.8 Implement update customer endpoint (PUT /customer/update/:id)
+- [x] 5.9 Implement soft delete customer endpoint
+- [x] 5.10 Add profile image upload on create/update
+- [x] 5.11 Add customer financial fields (totalSale, dueSale, due, collection, discount)
+- [x] 5.12 Register CustomerModule in AppModule
 
 ---
 

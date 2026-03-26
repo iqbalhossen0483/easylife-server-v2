@@ -92,9 +92,9 @@ export class AuthService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const user = await userRepo.findOne({
       where: { id: currentUserId },
-      relations: { createdBy: true, targets: true, notes: true },
+      relations: { created_by: true, targets: true, notes: true },
       select: {
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
           phone: true,

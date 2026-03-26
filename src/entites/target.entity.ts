@@ -23,23 +23,23 @@ export class Target {
   id: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
-  @Column({ type: 'int', default: 0 })
-  targetedAmnt: number;
+  @Column({ name: 'targeted_amnt', type: 'int', default: 0 })
+  targeted_amnt: number;
 
-  @Column({ type: 'timestamp' })
-  startDate: Date;
+  @Column({ name: 'start_date', type: 'timestamp' })
+  start_date: Date;
 
-  @Column({ type: 'timestamp' })
-  endDate: Date;
+  @Column({ name: 'end_date', type: 'timestamp' })
+  end_date: Date;
 
-  @Column({ type: 'decimal', default: 0, precision: 100, scale: 4 })
-  commissionPercentage: number;
+  @Column({ name: 'commission_percentage', type: 'decimal', default: 0, precision: 100, scale: 4 })
+  commission_percentage: number;
 
-  @Column({ type: 'decimal', default: 0 })
-  commissionAmount: number;
+  @Column({ name: 'commission_amount', type: 'decimal', default: 0 })
+  commission_amount: number;
 
   @Column({
     type: 'enum',
@@ -48,22 +48,22 @@ export class Target {
   })
   status: CommissionStatus;
 
-  @Column({ type: 'int', default: 0 })
-  achivedAmnt: number;
+  @Column({ name: 'achived_amnt', type: 'int', default: 0 })
+  achived_amnt: number;
 
-  @Column({ type: 'int', default: 0 })
-  failedAmnt: number;
+  @Column({ name: 'failed_amnt', type: 'int', default: 0 })
+  failed_amnt: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
-  @JoinColumn({ name: 'createdBy' })
-  createdBy: UserEntity;
+  @JoinColumn({ name: 'created_by' })
+  created_by: UserEntity;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at: Date;
 }

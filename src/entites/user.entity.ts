@@ -31,7 +31,6 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 50 })
   address: string;
 
-  // index
   @Index('IDX_USER_PHONE', { unique: true })
   @Column({ type: 'varchar', length: 11 })
   phone: string;
@@ -45,52 +44,52 @@ export class UserEntity {
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;
 
-  @Column({ default: 0 })
-  deliveredOrder?: number;
+  @Column({ name: 'delivered_order', default: 0 })
+  delivered_order?: number;
 
-  @Column({ default: 0 })
-  totalSale: number;
+  @Column({ name: 'total_sale', default: 0 })
+  total_sale: number;
 
-  @Column({ default: 0 })
-  dueSale: number;
+  @Column({ name: 'due_sale', default: 0 })
+  due_sale: number;
 
-  @Column({ default: 0 })
-  dueCollection: number;
+  @Column({ name: 'due_collection', default: 0 })
+  due_collection: number;
 
-  @Column({ default: 0 })
-  getSalary: number;
+  @Column({ name: 'get_salary', default: 0 })
+  get_salary: number;
 
   @Column({ default: 0 })
   incentive: number;
 
-  @Column({ default: 0 })
-  haveMoney: number;
+  @Column({ name: 'have_money', default: 0 })
+  have_money: number;
 
   @Column({ default: 0 })
   debt: number;
 
-  @Column({ type: 'text', default: null })
-  pushToken: string;
+  @Column({ name: 'push_token', type: 'text', default: null })
+  push_token: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at: Date;
 
   // relations
-  @ManyToOne(() => UserEntity, (user) => user.createdUsers, {
+  @ManyToOne(() => UserEntity, (user) => user.created_users, {
     nullable: true,
     onDelete: 'SET NULL',
   })
-  @JoinColumn({ name: 'createdBy' })
-  createdBy: UserEntity | null;
+  @JoinColumn({ name: 'created_by' })
+  created_by: UserEntity | null;
 
-  @OneToMany(() => UserEntity, (user) => user.createdBy)
-  createdUsers: UserEntity[];
+  @OneToMany(() => UserEntity, (user) => user.created_by)
+  created_users: UserEntity[];
 
   @OneToMany(() => Target, (target) => target.user)
   targets: Target[];

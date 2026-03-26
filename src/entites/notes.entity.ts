@@ -16,7 +16,7 @@ export class NotesEntity {
   id: number;
 
   @ManyToOne(() => UserEntity, (user) => user.notes)
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @Column({ type: 'varchar', length: 50, unique: true })
@@ -25,12 +25,12 @@ export class NotesEntity {
   @Column({ type: 'text' })
   content: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at: Date;
 }

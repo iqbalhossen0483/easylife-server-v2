@@ -52,13 +52,13 @@ export class UsersService {
     payload.password = hashPassword;
 
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
-    const newUser = userRepo.create({ ...payload, createdBy: currentUser });
+    const newUser = userRepo.create({ ...payload, created_by: currentUser });
     await userRepo.save(newUser);
 
     // Increment tenant user count
     await this.tenantDatabaseService.updateTenantCount('current_user', true);
 
-    const { password, createdBy, ...rest } = newUser;
+    const { password, created_by, ...rest } = newUser;
 
     return {
       success: true,
@@ -78,7 +78,7 @@ export class UsersService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const users = await userRepo.find({
       where: query,
-      relations: { createdBy: true },
+      relations: { created_by: true },
       select: {
         id: true,
         phone: true,
@@ -86,19 +86,19 @@ export class UsersService {
         address: true,
         designation: true,
         profile: true,
-        haveMoney: true,
+        have_money: true,
         debt: true,
-        totalSale: true,
-        dueSale: true,
-        dueCollection: true,
-        deliveredOrder: true,
-        createdAt: true,
-        createdBy: {
+        total_sale: true,
+        due_sale: true,
+        due_collection: true,
+        delivered_order: true,
+        created_at: true,
+        created_by: {
           id: true,
           name: true,
         },
       },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       take: limit,
       skip,
     });
@@ -125,9 +125,9 @@ export class UsersService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const user = await userRepo.findOne({
       where: { id: userId },
-      relations: { createdBy: true },
+      relations: { created_by: true },
       select: {
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
         },
@@ -209,7 +209,7 @@ export class UsersService {
     const targetRepo = await this.tenantDatabaseService.getRepository(Target);
     const targets = await targetRepo.find({
       where: { user: { id: userId } },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       take: 5,
     });
 
@@ -218,7 +218,7 @@ export class UsersService {
       await this.tenantDatabaseService.getRepository(NotesEntity);
     const notes = await noteRepo.find({
       where: { user: { id: userId } },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       take: 5,
     });
 

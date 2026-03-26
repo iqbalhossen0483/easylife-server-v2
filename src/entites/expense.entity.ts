@@ -29,23 +29,23 @@ export class ExpenseCategoryEntity {
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'created_by' })
-  createdBy: UserEntity;
+  created_by: UserEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'updated_by' })
-  updatedBy: UserEntity;
+  updated_by: UserEntity;
 
-  @Column({ type: 'varchar', length: 50, default: null })
-  prevName: string;
+  @Column({ name: 'prev_name', type: 'varchar', length: 50, default: null })
+  prev_name: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 
-  @DeleteDateColumn()
-  deletedAt: Date;
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at: Date;
 }
 
 export class ExpenseEntity {
@@ -67,9 +67,9 @@ export class ExpenseEntity {
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'created_by' })
-  createdBy: UserEntity;
+  created_by: UserEntity;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'approved_by' })
-  approvedBy: UserEntity;
+  approved_by: UserEntity;
 }

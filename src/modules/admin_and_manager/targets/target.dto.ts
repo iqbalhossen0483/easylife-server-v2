@@ -25,19 +25,19 @@ export class CreateTargetDto {
     { maxDecimalPlaces: 0 },
     { message: 'Target amount must be a number' },
   )
-  targetedAmnt: number;
+  targeted_amnt: number;
 
   @ApiProperty({ example: '2026-04-01' })
   @IsNotEmpty({ message: 'Start date is required' })
   @Type(() => Date)
   @IsDate({ message: 'Start date must be a date' })
-  startDate: Date;
+  start_date: Date;
 
   @ApiProperty({ example: '2026-04-30' })
   @IsNotEmpty({ message: 'End date is required' })
   @Type(() => Date)
   @IsDate({ message: 'End date must be a date' })
-  endDate: Date;
+  end_date: Date;
 
   @ApiProperty({ example: 5.5 })
   @IsNotEmpty({ message: 'Commission percentage is required' })
@@ -49,7 +49,7 @@ export class CreateTargetDto {
   @Max(100, {
     message: 'Commission percentage must be less than or equal to 100',
   })
-  commissionPercentage: number;
+  commission_percentage: number;
 }
 
 export class UpdateTargetDto {
@@ -60,19 +60,19 @@ export class UpdateTargetDto {
     { maxDecimalPlaces: 0 },
     { message: 'Target amount must be a number' },
   )
-  targetedAmnt?: number;
+  targeted_amnt?: number;
 
   @ApiPropertyOptional({ example: '2026-04-01' })
   @IsOptional()
   @Type(() => Date)
   @IsDate({ message: 'Start date must be a date' })
-  startDate?: Date;
+  start_date?: Date;
 
   @ApiPropertyOptional({ example: '2026-04-30' })
   @IsOptional()
   @Type(() => Date)
   @IsDate({ message: 'End date must be a date' })
-  endDate?: Date;
+  end_date?: Date;
 
   @ApiPropertyOptional({ example: 6.0 })
   @IsOptional()
@@ -85,7 +85,7 @@ export class UpdateTargetDto {
     message: 'Commission percentage must be less than or equal to 100',
   })
   @Min(0.0001, { message: 'Commission percentage must be greater than 0.0001' })
-  commissionPercentage?: number;
+  commission_percentage?: number;
 }
 
 export class GetTargetDto {

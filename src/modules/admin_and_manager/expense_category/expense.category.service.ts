@@ -55,10 +55,10 @@ export class ExpenseCategoryService {
     );
 
     const expenseCategory = expenseCategoryRepo.create(payload);
-    expenseCategory.createdBy = currentUser;
+    expenseCategory.created_by = currentUser;
     await expenseCategoryRepo.save(expenseCategory);
 
-    const { createdBy, ...rest } = expenseCategory;
+    const { created_by, ...rest } = expenseCategory;
 
     return {
       success: true,
@@ -79,7 +79,7 @@ export class ExpenseCategoryService {
       throw new NotFoundException('Expense category not found');
     }
 
-    let prevName: string | null = null;
+    let prev_name: string | null = null;
 
     if (payload.name) {
       const isExist = await this.getExpenseCategory({
@@ -88,7 +88,7 @@ export class ExpenseCategoryService {
       if (isExist) {
         throw new ConflictException('Expense category already exists');
       }
-      prevName = expenseCategory.name;
+      prev_name = expenseCategory.name;
     }
 
     const expenseCategoryRepo = await this.tenantDatabaseService.getRepository(
@@ -104,14 +104,14 @@ export class ExpenseCategoryService {
     if (!currentUser) {
       throw new NotFoundException('User not found');
     }
-    updateExpenseCategory.updatedBy = currentUser;
-    if (prevName) {
-      updateExpenseCategory.prevName = prevName;
+    updateExpenseCategory.updated_by = currentUser;
+    if (prev_name) {
+      updateExpenseCategory.prev_name = prev_name;
     }
 
     await expenseCategoryRepo.save(updateExpenseCategory);
 
-    const { createdBy, updatedBy, ...rest } = updateExpenseCategory;
+    const { created_by, updated_by, ...rest } = updateExpenseCategory;
 
     return {
       success: true,
@@ -137,17 +137,17 @@ export class ExpenseCategoryService {
 
     const categories = await expenseCategoryRepo.find({
       where: query,
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       take: limit,
       skip,
-      relations: { createdBy: true, updatedBy: true },
+      relations: { created_by: true, updated_by: true },
       select: {
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
           phone: true,
         },
-        updatedBy: {
+        updated_by: {
           id: true,
           name: true,
           phone: true,
@@ -177,14 +177,14 @@ export class ExpenseCategoryService {
   async getSingleExpenseCategory(expenseCategoryId: number) {
     const expenseCategory = await this.getExpenseCategory({
       where: { id: expenseCategoryId },
-      relations: { createdBy: true, updatedBy: true },
+      relations: { created_by: true, updated_by: true },
       select: {
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
           phone: true,
         },
-        updatedBy: {
+        updated_by: {
           id: true,
           name: true,
           phone: true,

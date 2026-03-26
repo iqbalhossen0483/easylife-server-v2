@@ -25,7 +25,7 @@ export class TargetService {
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const user = await userRepo.findOne({
       where: condition,
-      relations: { createdBy: true },
+      relations: { created_by: true },
     });
 
     return user;
@@ -59,38 +59,38 @@ export class TargetService {
       );
     }
 
-    const startDate = moment(payload.startDate, 'YYYY-MM-DD');
-    const endDate = moment(payload.endDate, 'YYYY-MM-DD');
+    const startDate = moment(payload.start_date, 'YYYY-MM-DD');
+    const endDate = moment(payload.end_date, 'YYYY-MM-DD');
 
     if (startDate.isAfter(endDate)) {
       throw new BadRequestException('Start date must be before end date');
     }
 
-    payload.startDate = startDate.toDate();
-    payload.endDate = endDate.endOf('day').toDate();
+    payload.start_date = startDate.toDate();
+    payload.end_date = endDate.endOf('day').toDate();
 
     const today = moment().startOf('day').toDate();
     const target = targetRepo.create(payload);
-    if (payload.startDate.getTime() < today.getTime()) {
+    if (payload.start_date.getTime() < today.getTime()) {
       target.status = CommissionStatus.RUNNING;
     }
 
     const commissionAmount =
-      payload.targetedAmnt * payload.commissionPercentage;
-    target.commissionAmount = commissionAmount;
+      payload.targeted_amnt * payload.commission_percentage;
+    target.commission_amount = commissionAmount;
 
     target.user = user;
-    target.createdBy = currentUser;
+    target.created_by = currentUser;
 
     await targetRepo.save(target);
 
-    const { user: _, createdBy, ...rest } = target;
+    const { user: _, created_by, ...rest } = target;
 
-    if (user.pushToken) {
+    if (user.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [user.pushToken],
+        tokens: [user.push_token],
         title: 'New Performance Target Assigned',
-        body: `A new performance target has been assigned to you by ${createdBy.name}.`,
+        body: `A new performance target has been assigned to you by ${created_by.name}.`,
         data: { targetId: target.id },
       });
     }
@@ -126,42 +126,42 @@ export class TargetService {
       throw new BadRequestException('Target already failed');
     }
 
-    let startDate = moment(target.startDate, 'YYYY-MM-DD');
-    let endDate = moment(target.endDate, 'YYYY-MM-DD');
+    let startDate = moment(target.start_date, 'YYYY-MM-DD');
+    let endDate = moment(target.end_date, 'YYYY-MM-DD');
 
-    if (payload.startDate) {
-      startDate = moment(payload.startDate, 'YYYY-MM-DD');
+    if (payload.start_date) {
+      startDate = moment(payload.start_date, 'YYYY-MM-DD');
       if (startDate.isAfter(endDate)) {
         throw new BadRequestException('Start date must be before end date');
       }
     }
-    if (payload.endDate) {
-      endDate = moment(payload.endDate, 'YYYY-MM-DD');
+    if (payload.end_date) {
+      endDate = moment(payload.end_date, 'YYYY-MM-DD');
       if (startDate.isAfter(endDate)) {
         throw new BadRequestException('Start date must be before end date');
       }
     }
 
-    const targetedAmnt = payload.targetedAmnt ?? target.targetedAmnt;
-    const commissionPercentage =
-      payload.commissionPercentage ?? target.commissionPercentage;
-    if (payload.targetedAmnt || payload.commissionPercentage) {
-      const commissionAmount = targetedAmnt * commissionPercentage;
-      target.commissionAmount = commissionAmount;
+    const targeted_amnt = payload.targeted_amnt ?? target.targeted_amnt;
+    const commission_percentage =
+      payload.commission_percentage ?? target.commission_percentage;
+    if (payload.targeted_amnt || payload.commission_percentage) {
+      const commissionAmount = targeted_amnt * commission_percentage;
+      target.commission_amount = commissionAmount;
     }
 
-    target.startDate = startDate.toDate();
-    target.endDate = endDate.endOf('day').toDate();
-    target.targetedAmnt = targetedAmnt;
-    target.commissionPercentage = commissionPercentage;
+    target.start_date = startDate.toDate();
+    target.end_date = endDate.endOf('day').toDate();
+    target.targeted_amnt = targeted_amnt;
+    target.commission_percentage = commission_percentage;
 
     await targetRepo.save(target);
 
-    if (targetUser.pushToken) {
+    if (targetUser.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [targetUser.pushToken],
+        tokens: [targetUser.push_token],
         title: 'Target Update Notification',
-        body: `Your assigned target has been revised by ${target.createdBy.name}. Kindly check your dashboard for updates.`,
+        body: `Your assigned target has been revised by ${target.created_by.name}. Kindly check your dashboard for updates.`,
         data: { targetId: target.id },
       });
     }
@@ -188,20 +188,20 @@ export class TargetService {
 
     const targets = await targetRepo.find({
       where: query,
-      relations: { user: true, createdBy: true },
+      relations: { user: true, created_by: true },
       select: {
         user: {
           id: true,
           name: true,
           phone: true,
         },
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
           phone: true,
         },
       },
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       take: limit,
       skip,
     });
@@ -229,14 +229,14 @@ export class TargetService {
 
     const target = await targetRepo.findOne({
       where: { id: targetCommissionId },
-      relations: { user: true, createdBy: true },
+      relations: { user: true, created_by: true },
       select: {
         user: {
           id: true,
           name: true,
           phone: true,
         },
-        createdBy: {
+        created_by: {
           id: true,
           name: true,
           phone: true,

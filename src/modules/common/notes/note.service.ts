@@ -74,7 +74,7 @@ export class NoteService {
       relations: { user: true },
       skip,
       take: limit,
-      order: { createdAt: 'DESC' },
+      order: { created_at: 'DESC' },
       select: {
         user: {
           id: true,
