@@ -28,11 +28,11 @@ import { ProductService } from './product.service';
 
 @ApiTags('Product')
 @UseGuards(AuthGaurd, RoleGaurd)
-@Role(Designation.ADMIN, Designation.STORE_MANAGER)
 @Controller('product')
 export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
+  @Role(Designation.STORE_MANAGER)
   @Post('/create')
   @UseInterceptors(FileInterceptor('profile', multerConfig))
   @ApiConsumes('multipart/form-data')
@@ -46,16 +46,19 @@ export class ProductController {
     return this.productService.createProduct(payload);
   }
 
+  @Role(Designation.STORE_MANAGER)
   @Get('/all')
   async getAll(@Query() payload: GetAllProductDto) {
     return this.productService.getAllProducts(payload);
   }
 
+  @Role(Designation.SUPER_ADMIN)
   @Get('/single/:id')
   async getSingle(@Param('id', ParseIntPipe) id: number) {
     return this.productService.getSingleProduct(id);
   }
 
+  @Role(Designation.SUPER_ADMIN)
   @Put('/update/:id')
   @UseInterceptors(FileInterceptor('profile', multerConfig))
   @ApiConsumes('multipart/form-data')
@@ -70,6 +73,7 @@ export class ProductController {
     return this.productService.updateProduct(id, payload);
   }
 
+  @Role(Designation.SUPER_ADMIN)
   @Delete('/delete/:id')
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.productService.deleteProduct(id);

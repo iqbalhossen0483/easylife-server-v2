@@ -520,6 +520,37 @@ export class OrderService {
     };
   }
 
+  async getMyCollections(currentUserId: number) {
+    const collectionRepo =
+      await this.tenantDbService.getRepository(CollectionEntity);
+
+    const collections = await collectionRepo.find({
+      where: { receiver: { id: currentUserId } },
+      relations: { order: { shop: true } },
+      select: {
+        id: true,
+        amount: true,
+        discount: true,
+        notes: true,
+        created_at: true,
+        order: {
+          id: true,
+          total_sale: true,
+          due: true,
+          shop: { id: true, shop_name: true },
+        },
+      },
+      order: { created_at: 'DESC' },
+      take: 50,
+    });
+
+    return {
+      success: true,
+      message: 'Collections fetched successfully',
+      data: collections,
+    };
+  }
+
   // --- Private helpers ---
 
   private async updateSalesTargets(

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -15,8 +16,28 @@ import {
   TransactionEntity,
   TransferPurpose,
 } from 'src/entites/transaction.entity';
-import { UserEntity } from 'src/entites/user.entity';
+import { Designation, UserEntity } from 'src/entites/user.entity';
 import { BalanceTransferDto } from './transaction.dto';
+
+// Which roles can use which transfer purposes
+const TRANSFER_ROLE_MAP: Record<TransferPurpose, Designation[]> = {
+  [TransferPurpose.BALANCE_TRANSFER]: [
+    Designation.SUPER_ADMIN,
+    Designation.ADMIN,
+    Designation.STORE_MANAGER,
+    Designation.SALES_MAN,
+  ],
+  [TransferPurpose.SALARY]: [Designation.SUPER_ADMIN],
+  [TransferPurpose.INCENTIVE]: [Designation.SUPER_ADMIN],
+  [TransferPurpose.COMMISSION]: [Designation.SUPER_ADMIN],
+  [TransferPurpose.DEBT]: [Designation.SUPER_ADMIN, Designation.ADMIN],
+  [TransferPurpose.DEBT_PAYMENT]: [
+    Designation.SUPER_ADMIN,
+    Designation.ADMIN,
+    Designation.STORE_MANAGER,
+    Designation.SALES_MAN,
+  ],
+};
 
 @Injectable()
 export class TransactionService {
@@ -24,7 +45,19 @@ export class TransactionService {
 
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async initiateTransfer(payload: BalanceTransferDto, currentUserId: number) {
+  async initiateTransfer(
+    payload: BalanceTransferDto,
+    currentUserId: number,
+    senderDesignation: Designation,
+  ) {
+    // Validate role can use this transfer purpose
+    const allowedRoles = TRANSFER_ROLE_MAP[payload.purpose];
+    if (!allowedRoles.includes(senderDesignation)) {
+      throw new ForbiddenException(
+        `Your role cannot perform ${payload.purpose} transfers`,
+      );
+    }
+
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
     const pendingRepo = await this.tenantDbService.getRepository(
       PendingBalanceTransferEntity,
@@ -91,69 +124,43 @@ export class TransactionService {
       });
       await txRepo.save(transaction);
 
-      // Update user balances based on purpose
       const amount = Number(pending.amount);
+      const senderId = pending.from_user.id;
+      const receiverId = pending.to_user.id;
 
       switch (pending.purpose) {
+        case TransferPurpose.BALANCE_TRANSFER:
+          await userRepo.decrement({ id: senderId }, 'have_money', amount);
+          await userRepo.increment({ id: receiverId }, 'have_money', amount);
+          break;
+
         case TransferPurpose.SALARY:
-          await userRepo.decrement(
-            { id: pending.from_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.increment(
-            { id: pending.to_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.increment(
-            { id: pending.to_user.id },
-            'get_salary',
-            amount,
-          );
+          await userRepo.decrement({ id: senderId }, 'have_money', amount);
+          await userRepo.increment({ id: receiverId }, 'get_salary', amount);
           await this.createAutoExpense(pending.from_user, 'Salary', amount);
           break;
 
         case TransferPurpose.INCENTIVE:
-          await userRepo.decrement(
-            { id: pending.from_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.increment(
-            { id: pending.to_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.increment(
-            { id: pending.to_user.id },
-            'incentive',
-            amount,
-          );
+          await userRepo.decrement({ id: senderId }, 'have_money', amount);
+          await userRepo.increment({ id: receiverId }, 'incentive', amount);
           await this.createAutoExpense(pending.from_user, 'Incentive', amount);
           break;
 
-        case TransferPurpose.DEBT_PAYMENT:
-          await userRepo.decrement(
-            { id: pending.from_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.decrement({ id: pending.to_user.id }, 'debt', amount);
+        case TransferPurpose.COMMISSION:
+          await userRepo.decrement({ id: senderId }, 'have_money', amount);
+          await userRepo.increment({ id: receiverId }, 'incentive', amount);
+          await this.createAutoExpense(pending.from_user, 'Commission', amount);
           break;
 
-        case TransferPurpose.PURCHASE_PRODUCT:
-        case TransferPurpose.OTHER:
-          await userRepo.decrement(
-            { id: pending.from_user.id },
-            'have_money',
-            amount,
-          );
-          await userRepo.increment(
-            { id: pending.to_user.id },
-            'have_money',
-            amount,
-          );
+        case TransferPurpose.DEBT:
+          await userRepo.decrement({ id: senderId }, 'have_money', amount);
+          await userRepo.increment({ id: receiverId }, 'debt', amount);
+          break;
+
+        case TransferPurpose.DEBT_PAYMENT:
+          // No deduction from sender, just reduce sender's debt and add to receiver's have_money
+          await userRepo.decrement({ id: senderId }, 'debt', amount);
+          await userRepo.increment({ id: receiverId }, 'have_money', amount);
           break;
       }
 
@@ -272,10 +279,9 @@ export class TransactionService {
       });
       await expenseRepo.save(expense);
     } catch (err) {
-      // Non-critical: don't fail the transfer if auto-expense fails
       this.logger.error(
-        `Failed to create auto-expense for ${categoryName}: ${err.message}`,
-        err.stack,
+        `Failed to create auto-expense for ${categoryName}`,
+        err instanceof Error ? err.stack : String(err),
       );
     }
   }

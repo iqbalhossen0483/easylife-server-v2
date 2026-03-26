@@ -61,7 +61,10 @@ export class UpdateUserDto {
   @Length(6, 20, { message: 'Password must be between 6 and 20 characters' })
   password?: string;
 
-  @ApiPropertyOptional({ example: Designation.MANAGER, enum: Designation })
+  @ApiPropertyOptional({
+    example: Designation.STORE_MANAGER,
+    enum: Designation,
+  })
   @IsOptional()
   @IsEnum(Designation, { message: 'Designation is invalid' })
   designation?: Designation;

@@ -29,7 +29,7 @@ import { PurchaseService } from './purchase.service';
 
 @ApiTags('Purchase')
 @UseGuards(AuthGaurd, RoleGaurd)
-@Role(Designation.ADMIN)
+@Role(Designation.SUPER_ADMIN)
 @Controller('purchase')
 export class PurchaseController {
   constructor(private readonly purchaseService: PurchaseService) {}

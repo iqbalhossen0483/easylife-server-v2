@@ -26,7 +26,11 @@ export class TransactionController {
     @Body() payload: BalanceTransferDto,
     @CurrentUser() user: JWT_Payload,
   ) {
-    return this.transactionService.initiateTransfer(payload, user.sub);
+    return this.transactionService.initiateTransfer(
+      payload,
+      user.sub,
+      user.designation,
+    );
   }
 
   @Post('/receive/:id')

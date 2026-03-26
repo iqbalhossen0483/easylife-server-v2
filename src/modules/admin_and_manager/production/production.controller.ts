@@ -11,7 +11,7 @@ import { ProductionService } from './production.service';
 
 @ApiTags('Production')
 @UseGuards(AuthGaurd, RoleGaurd)
-@Role(Designation.ADMIN, Designation.STORE_MANAGER)
+@Role(Designation.STORE_MANAGER)
 @Controller('production')
 export class ProductionController {
   constructor(private readonly productionService: ProductionService) {}

@@ -14,10 +14,10 @@ import { NotesEntity } from './notes.entity';
 import { Target } from './target.entity';
 
 export enum Designation {
-  SALES_MAN = 'sales_man',
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
   STORE_MANAGER = 'store_manager',
-  MANAGER = 'manager',
+  SALES_MAN = 'sales_man',
 }
 
 @Entity('users')

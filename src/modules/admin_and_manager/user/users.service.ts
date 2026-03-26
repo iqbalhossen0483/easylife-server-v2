@@ -231,10 +231,7 @@ export class UsersService {
     const orderRepo =
       await this.tenantDatabaseService.getRepository(OrderEntity);
     const orders = await orderRepo.find({
-      where: [
-        { created_by: { id: userId } },
-        { delivered_by: { id: userId } },
-      ],
+      where: [{ created_by: { id: userId } }, { delivered_by: { id: userId } }],
       order: { created_at: 'DESC' },
       take: 5,
     });

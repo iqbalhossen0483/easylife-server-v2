@@ -24,7 +24,7 @@ import {
 import { ExpenseCategoryService } from './expense.category.service';
 
 @UseGuards(AuthGaurd, RoleGaurd)
-@Role(Designation.ADMIN)
+@Role(Designation.SUPER_ADMIN)
 @Controller('admin/expense_category')
 export class ExpenseCategoryController {
   constructor(private readonly expenseService: ExpenseCategoryService) {}

@@ -28,7 +28,7 @@ import { SupplierService } from './supplier.service';
 
 @ApiTags('Supplier')
 @UseGuards(AuthGaurd, RoleGaurd)
-@Role(Designation.ADMIN)
+@Role(Designation.SUPER_ADMIN)
 @Controller('supplier')
 export class SupplierController {
   constructor(private readonly supplierService: SupplierService) {}

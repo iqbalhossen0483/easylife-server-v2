@@ -9,17 +9,12 @@ import {
 import { UserEntity } from './user.entity';
 
 export enum TransferPurpose {
+  BALANCE_TRANSFER = 'balance_transfer',
   SALARY = 'salary',
   INCENTIVE = 'incentive',
+  COMMISSION = 'commission',
+  DEBT = 'debt',
   DEBT_PAYMENT = 'debt_payment',
-  PURCHASE_PRODUCT = 'purchase_product',
-  OTHER = 'other',
-}
-
-export enum TransferStatus {
-  PENDING = 'pending',
-  COMPLETED = 'completed',
-  DECLINED = 'declined',
 }
 
 @Entity('pending_balance_transfer')
@@ -38,7 +33,7 @@ export class PendingBalanceTransferEntity {
   @Column({
     type: 'enum',
     enum: TransferPurpose,
-    default: TransferPurpose.OTHER,
+    default: TransferPurpose.BALANCE_TRANSFER,
   })
   purpose: TransferPurpose;
 
@@ -68,7 +63,7 @@ export class TransactionEntity {
   @Column({
     type: 'enum',
     enum: TransferPurpose,
-    default: TransferPurpose.OTHER,
+    default: TransferPurpose.BALANCE_TRANSFER,
   })
   purpose: TransferPurpose;
 

@@ -2,21 +2,27 @@ import { Injectable } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { CustomerEntity } from 'src/entites/customer.entity';
 import { ExpenseEntity, ExpenseStatus } from 'src/entites/expense.entity';
-import { OrderEntity, OrderStatus } from 'src/entites/order.entity';
+import {
+  OrderEntity,
+  OrderProductEntity,
+  OrderStatus,
+} from 'src/entites/order.entity';
 import { ProductEntity } from 'src/entites/product.entity';
 import {
   DailyCashReportEntity,
+  DailyStockReportEntity,
   MonthlyCashReportEntity,
   YearlyCashReportEntity,
 } from 'src/entites/report.entity';
-import { UserEntity } from 'src/entites/user.entity';
+import { TransactionEntity } from 'src/entites/transaction.entity';
+import { Designation, UserEntity } from 'src/entites/user.entity';
 import { Between } from 'typeorm';
 
 @Injectable()
 export class ReportService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async getDashboard() {
+  async getDashboard(designation?: Designation) {
     const today = new Date();
     const startOfDay = new Date(
       today.getFullYear(),
@@ -31,7 +37,6 @@ export class ReportService {
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
-    // Today's stats
     const todayOrders = await orderRepo.find({
       where: { created_at: Between(startOfDay, endOfDay) },
     });
@@ -54,6 +59,20 @@ export class ReportService {
     const totalUsers = await userRepo.count();
     const totalProducts = await productRepo.count();
 
+    // Admin: include last 2 months cash report summary
+    let recentCashReports: DailyCashReportEntity[] = [];
+    if (designation === Designation.ADMIN) {
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      const dailyRepo = await this.tenantDbService.getRepository(
+        DailyCashReportEntity,
+      );
+      recentCashReports = await dailyRepo.find({
+        where: { date: Between(twoMonthsAgo, today) },
+        order: { date: 'DESC' },
+      });
+    }
+
     return {
       success: true,
       message: 'Dashboard data fetched',
@@ -68,11 +87,34 @@ export class ReportService {
         total_customers: totalCustomers,
         total_users: totalUsers,
         total_products: totalProducts,
+        ...(designation === Designation.ADMIN
+          ? { recent_cash_reports: recentCashReports }
+          : {}),
       },
     };
   }
 
-  async getCashReport(method: 'date' | 'month' | 'year', value?: string) {
+  async getCashReport(
+    method: 'date' | 'month' | 'year',
+    value?: string,
+    designation?: Designation,
+  ) {
+    // Admin restricted to last 2 months for daily
+    if (designation === Designation.ADMIN && method === 'date') {
+      const twoMonthsAgo = new Date();
+      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+      const requestedDate = new Date(
+        value ?? new Date().toISOString().split('T')[0],
+      );
+      if (requestedDate < twoMonthsAgo) {
+        return {
+          success: false,
+          message: 'Admin can only access last 2 months of data',
+          data: null,
+        };
+      }
+    }
+
     if (method === 'date') {
       const repo = await this.tenantDbService.getRepository(
         DailyCashReportEntity,
@@ -126,7 +168,6 @@ export class ReportService {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    // Use database GROUP BY instead of in-memory grouping
     const chart_data = await orderRepo
       .createQueryBuilder('order')
       .select("TO_CHAR(order.created_at, 'YYYY-MM-DD')", 'date')
@@ -153,7 +194,6 @@ export class ReportService {
   async getPieChartData(start_date?: string, end_date?: string) {
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
 
-    // Use database GROUP BY with optional date range filter
     const qb = expenseRepo
       .createQueryBuilder('expense')
       .innerJoin('expense.type', 'type')
@@ -198,6 +238,109 @@ export class ReportService {
       success: true,
       message: 'Product chart data fetched',
       data: products,
+    };
+  }
+
+  async getStockReport(date?: string, productId?: number) {
+    const repo = await this.tenantDbService.getRepository(
+      DailyStockReportEntity,
+    );
+    const targetDate = date ?? new Date().toISOString().split('T')[0];
+
+    const where: Record<string, unknown> = { date: new Date(targetDate) };
+    if (productId) where['product_id'] = productId;
+
+    const reports = await repo.find({ where });
+
+    return {
+      success: true,
+      message: 'Stock report fetched',
+      data: reports,
+    };
+  }
+
+  async getUserSalesActivity(userId: number, date?: string) {
+    const targetDate = date ?? new Date().toISOString().split('T')[0];
+    const startOfDay = new Date(targetDate);
+    const endOfDay = new Date(targetDate + 'T23:59:59');
+
+    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
+
+    const orders = await orderRepo.find({
+      where: {
+        delivered_by: { id: userId },
+        status: OrderStatus.DELIVERED,
+        created_at: Between(startOfDay, endOfDay),
+      },
+      relations: { products: true, shop: true },
+      select: {
+        id: true,
+        total_sale: true,
+        payment: true,
+        due: true,
+        created_at: true,
+        shop: { id: true, shop_name: true },
+      },
+    });
+
+    // Aggregate product-wise sales
+    const productSales: Record<
+      string,
+      {
+        product_id: number;
+        product_name: string;
+        total_qty: number;
+        total_amount: number;
+      }
+    > = {};
+
+    for (const order of orders) {
+      for (const item of order.products) {
+        const key = String(item.product_id);
+        if (!productSales[key]) {
+          productSales[key] = {
+            product_id: item.product_id,
+            product_name: item.product_name,
+            total_qty: 0,
+            total_amount: 0,
+          };
+        }
+        productSales[key].total_qty += item.qty;
+        productSales[key].total_amount += Number(item.total);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'User sales activity fetched',
+      data: {
+        user_id: userId,
+        date: targetDate,
+        total_orders: orders.length,
+        total_sale: orders.reduce((s, o) => s + Number(o.total_sale), 0),
+        orders,
+        product_summary: Object.values(productSales),
+      },
+    };
+  }
+
+  async getTransactionHistory() {
+    const txRepo = await this.tenantDbService.getRepository(TransactionEntity);
+
+    const transactions = await txRepo.find({
+      relations: { from_user: true, to_user: true },
+      select: {
+        from_user: { id: true, name: true },
+        to_user: { id: true, name: true },
+      },
+      order: { created_at: 'DESC' },
+      take: 50,
+    });
+
+    return {
+      success: true,
+      message: 'Transaction history fetched',
+      data: transactions,
     };
   }
 }

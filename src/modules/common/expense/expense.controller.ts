@@ -20,11 +20,12 @@ import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
 import { ExpenseService } from './expense.service';
 
 @ApiTags('Expense')
-@UseGuards(AuthGaurd)
+@UseGuards(AuthGaurd, RoleGaurd)
 @Controller('expense')
 export class ExpenseController {
   constructor(private readonly expenseService: ExpenseService) {}
 
+  @Role(Designation.SUPER_ADMIN)
   @Post('/create')
   async submit(
     @Body() payload: CreateExpenseDto,
@@ -33,12 +34,12 @@ export class ExpenseController {
     return this.expenseService.submitExpense(payload, user.sub);
   }
 
+  @Role(Designation.SUPER_ADMIN, Designation.ADMIN)
   @Get('/all')
   async getAll(@Query() payload: GetAllExpenseDto) {
     return this.expenseService.getAllExpenses(payload);
   }
 
-  @UseGuards(RoleGaurd)
   @Role(Designation.ADMIN)
   @Post('/approve/:id')
   async approve(
@@ -48,7 +49,6 @@ export class ExpenseController {
     return this.expenseService.approveExpense(id, user.sub);
   }
 
-  @UseGuards(RoleGaurd)
   @Role(Designation.ADMIN)
   @Delete('/reject/:id')
   async reject(@Param('id', ParseIntPipe) id: number) {
