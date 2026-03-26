@@ -19,6 +19,7 @@ import { UsersModule } from './modules/admin_and_manager/user/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomerModule } from './modules/common/customer/customer.module';
 import { NoteModule } from './modules/common/notes/notes.module';
+import { OrderModule } from './modules/common/order/order.module';
 import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
 import { TransactionModule } from './modules/common/transaction/transaction.module';
 
@@ -39,6 +40,7 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     SupplierModule,
     TenantModule,
     CustomerModule,
+    OrderModule,
     NoteModule,
     ReportModule,
     TransactionModule,

@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 92 / 155 tasks completed (59%)
+## Progress: 112 / 155 tasks completed (72%)
 
 ---
 
@@ -122,26 +122,26 @@
 
 ## 8. Order Management
 
-- [ ] 8.1 Create OrderEntity with all fields
-- [ ] 8.2 Create OrderProductEntity (order-product junction)
-- [ ] 8.3 Create CollectionEntity (payment records)
-- [ ] 8.4 Create CreateOrderDto with validation
-- [ ] 8.5 Create UpdateOrderDto
-- [ ] 8.6 Create GetAllOrderDto (filters: date range, customer, user, status)
-- [ ] 8.7 Create CollectPaymentDto
-- [ ] 8.8 Implement create order endpoint (POST /order/create)
-- [ ] 8.9 Implement list orders endpoint (GET /order/all)
-- [ ] 8.10 Implement edit order endpoint (PUT /order/update/:id)
-- [ ] 8.11 Implement deliver order endpoint (PUT /order/deliver/:id)
-- [ ] 8.12 Implement collect payment endpoint (PUT /order/collect/:id)
-- [ ] 8.13 Implement delete order endpoint
-- [ ] 8.14 Update customer totals on delivery
-- [ ] 8.15 Update product stock on delivery
-- [ ] 8.16 Update user stats on delivery
-- [ ] 8.17 Update cash reports on delivery/collection
-- [ ] 8.18 Update stock reports on delivery
-- [ ] 8.19 Update sales targets on delivery
-- [ ] 8.20 Auto-create discount expense on collection
+- [x] 8.1 Create OrderEntity with all fields
+- [x] 8.2 Create OrderProductEntity (order-product junction)
+- [x] 8.3 Create CollectionEntity (payment records)
+- [x] 8.4 Create CreateOrderDto with validation
+- [x] 8.5 Create UpdateOrderDto
+- [x] 8.6 Create GetAllOrderDto (filters: date range, customer, user, status)
+- [x] 8.7 Create CollectPaymentDto
+- [x] 8.8 Implement create order endpoint (POST /order/create)
+- [x] 8.9 Implement list orders endpoint (GET /order/all)
+- [x] 8.10 Implement edit order endpoint (PUT /order/update/:id)
+- [x] 8.11 Implement deliver order endpoint (PUT /order/deliver/:id)
+- [x] 8.12 Implement collect payment endpoint (PUT /order/collect/:id)
+- [x] 8.13 Implement delete order endpoint
+- [x] 8.14 Update customer totals on delivery
+- [x] 8.15 Update product stock on delivery
+- [x] 8.16 Update user stats on delivery
+- [x] 8.17 Update cash reports on delivery/collection
+- [x] 8.18 Update stock reports on delivery
+- [x] 8.19 Update sales targets on delivery
+- [x] 8.20 Auto-create discount expense on collection
 
 ---
 
