@@ -44,7 +44,10 @@ export class CreatePurchaseDto {
   @ApiProperty({ example: 1 })
   @IsNotEmpty({ message: 'Supplier id is required' })
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Supplier id must be a number' })
+  @IsNumber(
+    { maxDecimalPlaces: 0 },
+    { message: 'Supplier id must be a number' },
+  )
   supplier_id: number;
 
   @ApiProperty({ type: [PurchaseProductItemDto] })
@@ -56,7 +59,10 @@ export class CreatePurchaseDto {
   @ApiProperty({ example: 20000 })
   @IsNotEmpty({ message: 'Total amount is required' })
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Total amount must be a number' })
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Total amount must be a number' },
+  )
   total_amount: number;
 
   @ApiPropertyOptional({ example: 15000 })
@@ -99,6 +105,9 @@ export class GetAllPurchaseDto {
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Supplier id must be a number' })
+  @IsNumber(
+    { maxDecimalPlaces: 0 },
+    { message: 'Supplier id must be a number' },
+  )
   supplier_id?: number;
 }

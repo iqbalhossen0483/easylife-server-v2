@@ -1,8 +1,4 @@
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('daily_cash_report')
 export class DailyCashReportEntity {
@@ -18,10 +14,22 @@ export class DailyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   closing: number;
 
-  @Column({ name: 'total_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_sale: number;
 
-  @Column({ name: 'due_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'due_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   due_sale: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -33,13 +41,31 @@ export class DailyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   purchase: number;
 
-  @Column({ name: 'market_due', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'market_due',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   market_due: number;
 
-  @Column({ name: 'cash_in', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'cash_in',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   cash_in: number;
 
-  @Column({ name: 'cash_out', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'cash_out',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   cash_out: number;
 }
 
@@ -60,10 +86,22 @@ export class MonthlyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   closing: number;
 
-  @Column({ name: 'total_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_sale: number;
 
-  @Column({ name: 'due_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'due_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   due_sale: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -75,7 +113,13 @@ export class MonthlyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   purchase: number;
 
-  @Column({ name: 'market_due', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'market_due',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   market_due: number;
 }
 
@@ -93,10 +137,22 @@ export class YearlyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   closing: number;
 
-  @Column({ name: 'total_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_sale: number;
 
-  @Column({ name: 'due_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'due_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   due_sale: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -108,7 +164,13 @@ export class YearlyCashReportEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   purchase: number;
 
-  @Column({ name: 'market_due', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'market_due',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   market_due: number;
 }
 

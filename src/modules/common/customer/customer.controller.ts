@@ -15,7 +15,9 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { multerConfig } from 'src/configs/multer.config';
+import { CurrentUser } from 'src/decorators/currentUser';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
+import type { JWT_Payload } from 'src/types/common';
 import {
   CreateCustomerDto,
   GetAllCustomerDto,
@@ -34,12 +36,13 @@ export class CustomerController {
   @ApiConsumes('multipart/form-data')
   async create(
     @Body() payload: CreateCustomerDto,
+    @CurrentUser() user: JWT_Payload,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file) {
       payload.profile = file.filename;
     }
-    return this.customerService.createCustomer(payload);
+    return this.customerService.createCustomer(payload, user.sub);
   }
 
   @Get('/all')

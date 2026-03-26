@@ -27,7 +27,9 @@ export class ProductionEntity {
   @JoinColumn({ name: 'production_by' })
   production_by: UserEntity;
 
-  @OneToMany(() => ProductionProductEntity, (pp) => pp.production_record, { cascade: true })
+  @OneToMany(() => ProductionProductEntity, (pp) => pp.production_record, {
+    cascade: true,
+  })
   components: ProductionProductEntity[];
 
   @CreateDateColumn({ name: 'created_at' })
@@ -39,7 +41,9 @@ export class ProductionProductEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => ProductionEntity, (p) => p.components, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ProductionEntity, (p) => p.components, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'production_id' })
   production_record: ProductionEntity;
 

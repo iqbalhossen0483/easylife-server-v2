@@ -8,7 +8,9 @@ export class CreateExpenseCategoryDto {
   @Length(3, 50, { message: 'Name must be between 3 and 50 characters' })
   name: string;
 
-  @ApiPropertyOptional({ example: 'Expenses for office supplies and stationery' })
+  @ApiPropertyOptional({
+    example: 'Expenses for office supplies and stationery',
+  })
   @IsOptional()
   @Length(3, 200, {
     message: 'Description must be between 3 and 200 characters',

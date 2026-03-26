@@ -12,7 +12,11 @@ export class SendNotificationDto {
   @IsNotEmpty({ message: 'Body is required' })
   body: string;
 
-  @ApiPropertyOptional({ example: [Designation.SALES_MAN], enum: Designation, isArray: true })
+  @ApiPropertyOptional({
+    example: [Designation.SALES_MAN],
+    enum: Designation,
+    isArray: true,
+  })
   @IsOptional()
   @IsArray({ message: 'Target roles must be an array' })
   @IsEnum(Designation, { each: true, message: 'Invalid role' })

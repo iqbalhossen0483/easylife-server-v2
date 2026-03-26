@@ -1,0 +1,107 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { CustomerEntity } from 'src/entites/customer.entity';
+import {
+  ExpenseCategoryEntity,
+  ExpenseEntity,
+} from 'src/entites/expense.entity';
+import { NotesEntity } from 'src/entites/notes.entity';
+import {
+  CollectionEntity,
+  OrderEntity,
+  OrderProductEntity,
+} from 'src/entites/order.entity';
+import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
+import { ProductEntity } from 'src/entites/product.entity';
+import {
+  ProductionEntity,
+  ProductionProductEntity,
+} from 'src/entites/production.entity';
+import {
+  PurchaseCollectionEntity,
+  PurchaseEntity,
+  PurchaseProductEntity,
+} from 'src/entites/purchase.entity';
+import {
+  DailyCashReportEntity,
+  DailyStockReportEntity,
+  MonthlyCashReportEntity,
+  MonthlyStockReportEntity,
+  YearlyCashReportEntity,
+  YearlyStockReportEntity,
+} from 'src/entites/report.entity';
+import { SupplierEntity } from 'src/entites/supplier.entity';
+import { Target } from 'src/entites/target.entity';
+import {
+  PendingBalanceTransferEntity,
+  TransactionEntity,
+} from 'src/entites/transaction.entity';
+import { UserEntity } from 'src/entites/user.entity';
+import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+
+export const TENANT_ENTITIES = [
+  UserEntity,
+  Target,
+  NotesEntity,
+  ExpenseCategoryEntity,
+  ExpenseEntity,
+  CustomerEntity,
+  ProductEntity,
+  SupplierEntity,
+  OrderEntity,
+  OrderProductEntity,
+  CollectionEntity,
+  PurchaseEntity,
+  PurchaseProductEntity,
+  PurchaseCollectionEntity,
+  ProductionEntity,
+  ProductionProductEntity,
+  PendingCommissionEntity,
+  TransactionEntity,
+  PendingBalanceTransferEntity,
+  DailyCashReportEntity,
+  MonthlyCashReportEntity,
+  YearlyCashReportEntity,
+  DailyStockReportEntity,
+  MonthlyStockReportEntity,
+  YearlyStockReportEntity,
+];
+
+@Injectable()
+export class TenantConnectionManager {
+  private dataSources = new Map<string, DataSource>();
+
+  constructor(private readonly configService: ConfigService) {}
+
+  async getDataSource(dbName: string): Promise<DataSource> {
+    if (this.dataSources.has(dbName)) {
+      const ds = this.dataSources.get(dbName)!;
+      if (ds.isInitialized) return ds;
+      this.dataSources.delete(dbName);
+    }
+
+    const dataSource = new DataSource({
+      type: 'postgres',
+      host: this.configService.get<string>('DB_HOST'),
+      port: this.configService.get<number>('DB_PORT'),
+      username: this.configService.get<string>('DB_USERNAME'),
+      password: this.configService.get<string>('DB_PASS'),
+      database: dbName,
+      entities: TENANT_ENTITIES,
+      synchronize: true,
+    });
+
+    await dataSource.initialize();
+    this.dataSources.set(dbName, dataSource);
+
+    return dataSource;
+  }
+
+  async getRepository<T extends ObjectLiteral>(
+    dbName: string,
+    entity: EntityTarget<T>,
+  ): Promise<Repository<T>> {
+    const ds = await this.getDataSource(dbName);
+    return ds.getRepository<T>(entity);
+  }
+}

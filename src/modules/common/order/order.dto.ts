@@ -52,7 +52,10 @@ export class CreateOrderDto {
   @ApiProperty({ example: 1 })
   @IsNotEmpty({ message: 'Delivered by user id is required' })
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Delivered by must be a number' })
+  @IsNumber(
+    { maxDecimalPlaces: 0 },
+    { message: 'Delivered by must be a number' },
+  )
   delivered_by: number;
 
   @ApiProperty({ type: [OrderProductItemDto] })
@@ -84,7 +87,10 @@ export class UpdateOrderDto {
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Delivered by must be a number' })
+  @IsNumber(
+    { maxDecimalPlaces: 0 },
+    { message: 'Delivered by must be a number' },
+  )
   delivered_by?: number;
 
   @ApiPropertyOptional({ type: [OrderProductItemDto] })

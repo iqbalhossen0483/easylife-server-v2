@@ -25,13 +25,31 @@ export class SupplierEntity {
   profile: string;
 
   // Financial fields
-  @Column({ name: 'total_purchased', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_purchased',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_purchased: number;
 
-  @Column({ name: 'give_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'give_amount',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   give_amount: number;
 
-  @Column({ name: 'debt_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'debt_amount',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   debt_amount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })

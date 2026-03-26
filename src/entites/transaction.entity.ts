@@ -35,7 +35,11 @@ export class PendingBalanceTransferEntity {
   @JoinColumn({ name: 'to_user' })
   to_user: UserEntity;
 
-  @Column({ type: 'enum', enum: TransferPurpose, default: TransferPurpose.OTHER })
+  @Column({
+    type: 'enum',
+    enum: TransferPurpose,
+    default: TransferPurpose.OTHER,
+  })
   purpose: TransferPurpose;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
@@ -61,7 +65,11 @@ export class TransactionEntity {
   @JoinColumn({ name: 'to_user' })
   to_user: UserEntity;
 
-  @Column({ type: 'enum', enum: TransferPurpose, default: TransferPurpose.OTHER })
+  @Column({
+    type: 'enum',
+    enum: TransferPurpose,
+    default: TransferPurpose.OTHER,
+  })
   purpose: TransferPurpose;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })

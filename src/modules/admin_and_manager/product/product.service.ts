@@ -29,8 +29,7 @@ export class ProductService {
   }
 
   async createProduct(payload: CreateProductDto) {
-    const productRepo =
-      await this.tenantDbService.getRepository(ProductEntity);
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const existing = await productRepo.findOne({
       where: { name: payload.name },
@@ -61,8 +60,7 @@ export class ProductService {
       query.push({ short_name: ILike(`%${search}%`) });
     }
 
-    const productRepo =
-      await this.tenantDbService.getRepository(ProductEntity);
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const [products, total] = await productRepo.findAndCount({
       where: query.length ? query : undefined,
@@ -87,8 +85,7 @@ export class ProductService {
   }
 
   async getSingleProduct(productId: number) {
-    const productRepo =
-      await this.tenantDbService.getRepository(ProductEntity);
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const product = await productRepo.findOne({
       where: { id: productId },
@@ -106,8 +103,7 @@ export class ProductService {
   }
 
   async updateProduct(productId: number, payload: UpdateProductDto) {
-    const productRepo =
-      await this.tenantDbService.getRepository(ProductEntity);
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const product = await productRepo.findOne({
       where: { id: productId },
@@ -139,8 +135,7 @@ export class ProductService {
   }
 
   async deleteProduct(productId: number) {
-    const productRepo =
-      await this.tenantDbService.getRepository(ProductEntity);
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const product = await productRepo.findOne({
       where: { id: productId },

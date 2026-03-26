@@ -35,7 +35,13 @@ export class Target {
   @Column({ name: 'end_date', type: 'timestamp' })
   end_date: Date;
 
-  @Column({ name: 'commission_percentage', type: 'decimal', default: 0, precision: 100, scale: 4 })
+  @Column({
+    name: 'commission_percentage',
+    type: 'decimal',
+    default: 0,
+    precision: 100,
+    scale: 4,
+  })
   commission_percentage: number;
 
   @Column({ name: 'commission_amount', type: 'decimal', default: 0 })

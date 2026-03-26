@@ -8,7 +8,9 @@ export class CreateNoteDto {
   @Length(3, 50, { message: 'Title must be between 3 and 50 characters' })
   title: string;
 
-  @ApiProperty({ example: 'Discussed Q2 targets and commission structure updates' })
+  @ApiProperty({
+    example: 'Discussed Q2 targets and commission structure updates',
+  })
   @IsNotEmpty({ message: 'Content is required' })
   @Length(3, 1000, { message: 'Content must be between 3 and 1000 characters' })
   content: string;
@@ -20,7 +22,9 @@ export class UpdateNoteDto {
   @Length(3, 50, { message: 'Title must be between 3 and 50 characters' })
   title?: string;
 
-  @ApiPropertyOptional({ example: 'Added action items from the planning session' })
+  @ApiPropertyOptional({
+    example: 'Added action items from the planning session',
+  })
   @IsOptional()
   @Length(3, 1000, { message: 'Content must be between 3 and 1000 characters' })
   content?: string;

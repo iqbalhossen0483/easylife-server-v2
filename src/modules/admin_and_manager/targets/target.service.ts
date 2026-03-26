@@ -32,17 +32,11 @@ export class TargetService {
     return user;
   }
 
-  async createUserTarget(payload: CreateTargetDto) {
-    const currentUserId = this.tenantDatabaseService.getCurrentUserId();
+  async createUserTarget(payload: CreateTargetDto, currentUserId: number) {
     const targetRepo = await this.tenantDatabaseService.getRepository(Target);
 
     const user = await this.getUser({ id: payload.userId });
     if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    const currentUser = await this.getUser({ id: currentUserId });
-    if (!currentUser) {
       throw new NotFoundException('User not found');
     }
 
@@ -81,17 +75,17 @@ export class TargetService {
     target.commission_amount = commissionAmount;
 
     target.user = user;
-    target.created_by = currentUser;
+    target.created_by = { id: currentUserId } as UserEntity;
 
     await targetRepo.save(target);
 
-    const { user: _, created_by, ...rest } = target;
+    const { user: _, ...rest } = target;
 
     if (user.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [user.push_token],
+        tokens: [user.push_token as string],
         title: 'New Performance Target Assigned',
-        body: `A new performance target has been assigned to you by ${created_by.name}.`,
+        body: `A new performance target has been assigned to you.`,
         data: { targetId: target.id },
       });
     }
@@ -143,9 +137,10 @@ export class TargetService {
       }
     }
 
-    const targeted_amnt = payload.targeted_amnt ?? target.targeted_amnt;
-    const commission_percentage =
-      payload.commission_percentage ?? target.commission_percentage;
+    const targeted_amnt = Number(payload.targeted_amnt ?? target.targeted_amnt);
+    const commission_percentage = Number(
+      payload.commission_percentage ?? target.commission_percentage,
+    );
     if (payload.targeted_amnt || payload.commission_percentage) {
       const commissionAmount = targeted_amnt * commission_percentage;
       target.commission_amount = commissionAmount;
@@ -160,9 +155,9 @@ export class TargetService {
 
     if (targetUser.push_token) {
       await this.notificationService.sendNotification({
-        tokens: [targetUser.push_token],
+        tokens: [targetUser.push_token as string],
         title: 'Target Update Notification',
-        body: `Your assigned target has been revised by ${target.created_by.name}. Kindly check your dashboard for updates.`,
+        body: `Your assigned target has been revised. Kindly check your dashboard for updates.`,
         data: { targetId: target.id },
       });
     }
@@ -280,7 +275,9 @@ export class TargetService {
   }
 
   async getPendingCommissions() {
-    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+    const pcRepo = await this.tenantDatabaseService.getRepository(
+      PendingCommissionEntity,
+    );
     const commissions = await pcRepo.find({
       relations: { user: true, target: true },
       select: {
@@ -297,7 +294,9 @@ export class TargetService {
   }
 
   async approveCommission(commissionId: number) {
-    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+    const pcRepo = await this.tenantDatabaseService.getRepository(
+      PendingCommissionEntity,
+    );
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
 
     const pending = await pcRepo.findOne({
@@ -307,8 +306,16 @@ export class TargetService {
     if (!pending) throw new NotFoundException('Pending commission not found');
 
     // Add commission to user balance
-    await userRepo.increment({ id: pending.user.id }, 'have_money', pending.commission);
-    await userRepo.increment({ id: pending.user.id }, 'incentive', pending.commission);
+    await userRepo.increment(
+      { id: pending.user.id },
+      'have_money',
+      pending.commission,
+    );
+    await userRepo.increment(
+      { id: pending.user.id },
+      'incentive',
+      pending.commission,
+    );
 
     // Remove pending record
     await pcRepo.delete({ id: commissionId });
@@ -320,7 +327,9 @@ export class TargetService {
   }
 
   async rejectCommission(commissionId: number) {
-    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+    const pcRepo = await this.tenantDatabaseService.getRepository(
+      PendingCommissionEntity,
+    );
 
     const pending = await pcRepo.findOne({ where: { id: commissionId } });
     if (!pending) throw new NotFoundException('Pending commission not found');

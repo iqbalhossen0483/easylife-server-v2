@@ -10,11 +10,13 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/decorators/currentUser';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
-import { ApiTags } from '@nestjs/swagger';
+import type { JWT_Payload } from 'src/types/common';
 import { CreateTargetDto, GetTargetDto, UpdateTargetDto } from './target.dto';
 import { TargetService } from './target.service';
 
@@ -24,9 +26,13 @@ import { TargetService } from './target.service';
 @Controller('user/target')
 export class TargetController {
   constructor(private readonly targetCommisionService: TargetService) {}
+
   @Post('/create')
-  async giveTarget(@Body() payload: CreateTargetDto) {
-    return this.targetCommisionService.createUserTarget(payload);
+  async giveTarget(
+    @Body() payload: CreateTargetDto,
+    @CurrentUser() user: JWT_Payload,
+  ) {
+    return this.targetCommisionService.createUserTarget(payload, user.sub);
   }
 
   @Put('/update/:id')

@@ -18,17 +18,21 @@ import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
 export class ExpenseService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async submitExpense(payload: CreateExpenseDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-
+  async submitExpense(payload: CreateExpenseDto, currentUserId: number) {
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const categoryRepo = await this.tenantDbService.getRepository(ExpenseCategoryEntity);
+    const categoryRepo = await this.tenantDbService.getRepository(
+      ExpenseCategoryEntity,
+    );
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
 
-    const currentUser = await userRepo.findOne({ where: { id: currentUserId } });
+    const currentUser = await userRepo.findOne({
+      where: { id: currentUserId },
+    });
     if (!currentUser) throw new NotFoundException('User not found');
 
-    const category = await categoryRepo.findOne({ where: { id: payload.type_id } });
+    const category = await categoryRepo.findOne({
+      where: { id: payload.type_id },
+    });
     if (!category) throw new NotFoundException('Expense category not found');
 
     // Admin: direct approval. Non-admin: pending
@@ -38,17 +42,24 @@ export class ExpenseService {
       type: category,
       amount: payload.amount,
       note: payload.note,
-      created_by: currentUser,
+      created_by: { id: currentUserId } as UserEntity,
       status: isAdmin ? ExpenseStatus.APPROVED : ExpenseStatus.PENDING,
-      approved_by: isAdmin ? currentUser : undefined,
-      approved_at: isAdmin ? new Date() : undefined,
     });
+
+    if (isAdmin) {
+      expense.approved_by = { id: currentUserId } as UserEntity;
+      expense.approved_at = new Date();
+    }
 
     await expenseRepo.save(expense);
 
     // If admin, immediately update user balance
     if (isAdmin) {
-      await userRepo.decrement({ id: currentUser.id }, 'have_money', payload.amount);
+      await userRepo.decrement(
+        { id: currentUserId },
+        'have_money',
+        payload.amount,
+      );
     }
 
     // TODO: Update cash reports
@@ -62,8 +73,7 @@ export class ExpenseService {
     };
   }
 
-  async approveExpense(expenseId: number) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
+  async approveExpense(expenseId: number, currentUserId: number) {
     const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
 
@@ -77,15 +87,18 @@ export class ExpenseService {
       throw new BadRequestException('Expense is not pending');
     }
 
-    const approver = await userRepo.findOne({ where: { id: currentUserId } });
-
     expense.status = ExpenseStatus.APPROVED;
-    expense.approved_by = approver;
+    expense.approved_by = { id: currentUserId } as UserEntity;
     expense.approved_at = new Date();
     await expenseRepo.save(expense);
 
     // Update expense creator's balance
-    await userRepo.decrement({ id: expense.created_by.id }, 'have_money', expense.amount);
+    const creatorId = expense.created_by.id;
+    await userRepo.decrement(
+      { id: creatorId },
+      'have_money',
+      Number(expense.amount),
+    );
 
     // TODO: Update cash reports
 
@@ -128,7 +141,10 @@ export class ExpenseService {
     if (status) query.status = status;
     if (type_id) query.type = { id: type_id };
     if (start_date && end_date) {
-      query.created_at = Between(new Date(start_date), new Date(end_date + 'T23:59:59'));
+      query.created_at = Between(
+        new Date(start_date),
+        new Date(end_date + 'T23:59:59'),
+      );
     }
 
     const [expenses, total] = await expenseRepo.findAndCount({

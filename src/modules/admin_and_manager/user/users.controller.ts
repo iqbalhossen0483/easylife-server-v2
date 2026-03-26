@@ -15,10 +15,12 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { multerConfig } from 'src/configs/multer.config';
+import { CurrentUser } from 'src/decorators/currentUser';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
+import type { JWT_Payload } from 'src/types/common';
 import { CreateUserDto, getAllUserDto, UpdateUserDto } from './user.dto';
 import { UsersService } from './users.service';
 
@@ -34,12 +36,13 @@ export class UsersController {
   @ApiConsumes('multipart/form-data')
   async create(
     @Body() payload: CreateUserDto,
+    @CurrentUser() user: JWT_Payload,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file) {
       payload.profile = file.filename;
     }
-    return this.usersService.createUser(payload);
+    return this.usersService.createUser(payload, user.sub);
   }
 
   @Get('/all')

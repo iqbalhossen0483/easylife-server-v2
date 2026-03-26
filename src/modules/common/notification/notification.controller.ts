@@ -36,7 +36,10 @@ export class NotificationController {
     } else if (payload.target_roles && payload.target_roles.length > 0) {
       // Send to users by role
       const users = await userRepo.find({
-        where: { designation: In(payload.target_roles), push_token: Not(IsNull()) },
+        where: {
+          designation: In(payload.target_roles),
+          push_token: Not(IsNull()),
+        },
         select: { push_token: true },
       });
       tokens = users.map((u) => u.push_token).filter(Boolean);

@@ -29,19 +29,22 @@ import {
 export class OrderService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async createOrder(payload: CreateOrderDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-
+  async createOrder(payload: CreateOrderDto, currentUserId: number) {
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const customerRepo = await this.tenantDbService.getRepository(CustomerEntity);
+    const customerRepo =
+      await this.tenantDbService.getRepository(CustomerEntity);
 
-    const customer = await customerRepo.findOne({ where: { id: payload.shop_id } });
+    const customer = await customerRepo.findOne({
+      where: { id: payload.shop_id },
+    });
     if (!customer) throw new NotFoundException('Customer not found');
 
-    const createdByUser = await userRepo.findOne({ where: { id: currentUserId } });
-    const deliveredByUser = await userRepo.findOne({ where: { id: payload.delivered_by } });
-    if (!deliveredByUser) throw new NotFoundException('Delivery user not found');
+    const deliveredByUser = await userRepo.findOne({
+      where: { id: payload.delivered_by },
+    });
+    if (!deliveredByUser)
+      throw new NotFoundException('Delivery user not found');
 
     const orderProducts = payload.products.map((p) => {
       const op = new OrderProductEntity();
@@ -55,7 +58,7 @@ export class OrderService {
 
     const order = orderRepo.create({
       shop: customer,
-      created_by: createdByUser,
+      created_by: { id: currentUserId } as UserEntity,
       delivered_by: deliveredByUser,
       total_sale: payload.total_sale,
       payment: payload.payment ?? 0,
@@ -91,7 +94,10 @@ export class OrderService {
     if (user_id) query.delivered_by = { id: user_id };
     if (status) query.status = status;
     if (start_date && end_date) {
-      query.created_at = Between(new Date(start_date), new Date(end_date + 'T23:59:59'));
+      query.created_at = Between(
+        new Date(start_date),
+        new Date(end_date + 'T23:59:59'),
+      );
     }
 
     const [orders, total] = await orderRepo.findAndCount({
@@ -177,7 +183,9 @@ export class OrderService {
 
     if (payload.delivered_by) {
       const userRepo = await this.tenantDbService.getRepository(UserEntity);
-      const deliveryUser = await userRepo.findOne({ where: { id: payload.delivered_by } });
+      const deliveryUser = await userRepo.findOne({
+        where: { id: payload.delivered_by },
+      });
       if (!deliveryUser) throw new NotFoundException('Delivery user not found');
       order.delivered_by = deliveryUser;
     }
@@ -188,7 +196,8 @@ export class OrderService {
 
     // Replace products if provided
     if (payload.products) {
-      const opRepo = await this.tenantDbService.getRepository(OrderProductEntity);
+      const opRepo =
+        await this.tenantDbService.getRepository(OrderProductEntity);
       await opRepo.delete({ order: { id: orderId } });
 
       const newProducts = payload.products.map((p) => {
@@ -216,7 +225,12 @@ export class OrderService {
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
     const order = await orderRepo.findOne({
       where: { id: orderId },
-      relations: { shop: true, delivered_by: true, created_by: true, products: true },
+      relations: {
+        shop: true,
+        delivered_by: true,
+        created_by: true,
+        products: true,
+      },
     });
     if (!order) throw new NotFoundException('Order not found');
 
@@ -231,11 +245,19 @@ export class OrderService {
     // --- Side effects ---
 
     // 8.14 Update customer totals
-    const customerRepo = await this.tenantDbService.getRepository(CustomerEntity);
-    await customerRepo.increment({ id: order.shop.id }, 'total_sale', order.total_sale);
+    const customerRepo =
+      await this.tenantDbService.getRepository(CustomerEntity);
+    await customerRepo.increment(
+      { id: order.shop.id },
+      'total_sale',
+      order.total_sale,
+    );
     await customerRepo.increment({ id: order.shop.id }, 'due_sale', order.due);
     await customerRepo.increment({ id: order.shop.id }, 'due', order.due);
-    await customerRepo.update({ id: order.shop.id }, { last_order: new Date() });
+    await customerRepo.update(
+      { id: order.shop.id },
+      { last_order: new Date() },
+    );
 
     // 8.15 Update product stock
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
@@ -247,11 +269,27 @@ export class OrderService {
     // 8.16 Update user stats
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
     if (order.delivered_by) {
-      await userRepo.increment({ id: order.delivered_by.id }, 'delivered_order', 1);
-      await userRepo.increment({ id: order.delivered_by.id }, 'total_sale', order.total_sale);
-      await userRepo.increment({ id: order.delivered_by.id }, 'due_sale', order.due);
+      await userRepo.increment(
+        { id: order.delivered_by.id },
+        'delivered_order',
+        1,
+      );
+      await userRepo.increment(
+        { id: order.delivered_by.id },
+        'total_sale',
+        order.total_sale,
+      );
+      await userRepo.increment(
+        { id: order.delivered_by.id },
+        'due_sale',
+        order.due,
+      );
       if (order.payment > 0) {
-        await userRepo.increment({ id: order.delivered_by.id }, 'have_money', order.payment);
+        await userRepo.increment(
+          { id: order.delivered_by.id },
+          'have_money',
+          order.payment,
+        );
       }
     }
 
@@ -266,9 +304,11 @@ export class OrderService {
     };
   }
 
-  async collectPayment(orderId: number, payload: CollectPaymentDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-
+  async collectPayment(
+    orderId: number,
+    payload: CollectPaymentDto,
+    currentUserId: number,
+  ) {
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
     const order = await orderRepo.findOne({
       where: { id: orderId },
@@ -277,7 +317,9 @@ export class OrderService {
     if (!order) throw new NotFoundException('Order not found');
 
     if (order.status !== OrderStatus.DELIVERED) {
-      throw new BadRequestException('Order must be delivered before collecting payment');
+      throw new BadRequestException(
+        'Order must be delivered before collecting payment',
+      );
     }
 
     const collectionAmount = payload.amount;
@@ -289,13 +331,12 @@ export class OrderService {
     }
 
     // Create collection record
-    const collectionRepo = await this.tenantDbService.getRepository(CollectionEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const receiver = await userRepo.findOne({ where: { id: currentUserId } });
+    const collectionRepo =
+      await this.tenantDbService.getRepository(CollectionEntity);
 
     const collection = collectionRepo.create({
       order,
-      receiver,
+      receiver: { id: currentUserId } as UserEntity,
       amount: collectionAmount,
       discount: discountAmount,
       notes: payload.notes,
@@ -309,17 +350,35 @@ export class OrderService {
     await orderRepo.save(order);
 
     // Update customer
-    const customerRepo = await this.tenantDbService.getRepository(CustomerEntity);
-    await customerRepo.increment({ id: order.shop.id }, 'collection', collectionAmount);
+    const customerRepo =
+      await this.tenantDbService.getRepository(CustomerEntity);
+    await customerRepo.increment(
+      { id: order.shop.id },
+      'collection',
+      collectionAmount,
+    );
     if (discountAmount > 0) {
-      await customerRepo.increment({ id: order.shop.id }, 'discount', discountAmount);
+      await customerRepo.increment(
+        { id: order.shop.id },
+        'discount',
+        discountAmount,
+      );
     }
     await customerRepo.decrement({ id: order.shop.id }, 'due', totalReceived);
 
     // Update receiver user balance
-    if (receiver && collectionAmount > 0) {
-      await userRepo.increment({ id: receiver.id }, 'have_money', collectionAmount);
-      await userRepo.increment({ id: receiver.id }, 'due_collection', collectionAmount);
+    if (collectionAmount > 0) {
+      const userRepo = await this.tenantDbService.getRepository(UserEntity);
+      await userRepo.increment(
+        { id: currentUserId },
+        'have_money',
+        collectionAmount,
+      );
+      await userRepo.increment(
+        { id: currentUserId },
+        'due_collection',
+        collectionAmount,
+      );
     }
 
     // 8.20 Auto-create discount expense
@@ -371,7 +430,8 @@ export class OrderService {
         },
       });
       if (deliveryTarget) {
-        deliveryTarget.achived_amnt = Number(deliveryTarget.achived_amnt) + Number(order.total_sale);
+        deliveryTarget.achived_amnt =
+          Number(deliveryTarget.achived_amnt) + Number(order.total_sale);
         await targetRepo.save(deliveryTarget);
       }
     }
@@ -385,7 +445,8 @@ export class OrderService {
         },
       });
       if (creatorTarget) {
-        creatorTarget.achived_amnt = Number(creatorTarget.achived_amnt) + Number(order.total_sale);
+        creatorTarget.achived_amnt =
+          Number(creatorTarget.achived_amnt) + Number(order.total_sale);
         await targetRepo.save(creatorTarget);
       }
     }

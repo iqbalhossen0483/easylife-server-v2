@@ -38,21 +38,20 @@ export class UsersService {
     }
   }
 
-  async createUser(payload: CreateUserDto) {
-    const currentUserId = this.tenantDatabaseService.getCurrentUserId();
-
+  async createUser(payload: CreateUserDto, currentUserId: number) {
     const user = await this.getUser({ phone: payload.phone });
     if (user) {
       throw new ConflictException('User already exists');
     }
 
-    const currentUser = await this.getUser({ id: currentUserId });
-
     const hashPassword = this.hashPass(payload.password);
     payload.password = hashPassword;
 
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
-    const newUser = userRepo.create({ ...payload, created_by: currentUser });
+    const newUser = userRepo.create({
+      ...payload,
+      created_by: { id: currentUserId } as UserEntity,
+    });
     await userRepo.save(newUser);
 
     // Increment tenant user count

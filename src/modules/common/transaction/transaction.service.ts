@@ -21,15 +21,15 @@ import { BalanceTransferDto } from './transaction.dto';
 export class TransactionService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async initiateTransfer(payload: BalanceTransferDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
+  async initiateTransfer(payload: BalanceTransferDto, currentUserId: number) {
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const pendingRepo = await this.tenantDbService.getRepository(PendingBalanceTransferEntity);
+    const pendingRepo = await this.tenantDbService.getRepository(
+      PendingBalanceTransferEntity,
+    );
 
-    const fromUser = await userRepo.findOne({ where: { id: currentUserId } });
-    if (!fromUser) throw new NotFoundException('User not found');
-
-    const toUser = await userRepo.findOne({ where: { id: payload.to_user_id } });
+    const toUser = await userRepo.findOne({
+      where: { id: payload.to_user_id },
+    });
     if (!toUser) throw new NotFoundException('Recipient user not found');
 
     if (currentUserId === payload.to_user_id) {
@@ -37,7 +37,7 @@ export class TransactionService {
     }
 
     const pending = pendingRepo.create({
-      from_user: fromUser,
+      from_user: { id: currentUserId } as UserEntity,
       to_user: toUser,
       purpose: payload.purpose,
       amount: payload.amount,
@@ -53,9 +53,10 @@ export class TransactionService {
     };
   }
 
-  async acceptTransfer(transferId: number) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-    const pendingRepo = await this.tenantDbService.getRepository(PendingBalanceTransferEntity);
+  async acceptTransfer(transferId: number, currentUserId: number) {
+    const pendingRepo = await this.tenantDbService.getRepository(
+      PendingBalanceTransferEntity,
+    );
     const txRepo = await this.tenantDbService.getRepository(TransactionEntity);
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
 
@@ -66,7 +67,9 @@ export class TransactionService {
     if (!pending) throw new NotFoundException('Pending transfer not found');
 
     if (pending.to_user.id !== currentUserId) {
-      throw new BadRequestException('Only the recipient can accept this transfer');
+      throw new BadRequestException(
+        'Only the recipient can accept this transfer',
+      );
     }
 
     // Create transaction record
@@ -84,28 +87,64 @@ export class TransactionService {
 
     switch (pending.purpose) {
       case TransferPurpose.SALARY:
-        await userRepo.decrement({ id: pending.from_user.id }, 'have_money', amount);
-        await userRepo.increment({ id: pending.to_user.id }, 'have_money', amount);
-        await userRepo.increment({ id: pending.to_user.id }, 'get_salary', amount);
+        await userRepo.decrement(
+          { id: pending.from_user.id },
+          'have_money',
+          amount,
+        );
+        await userRepo.increment(
+          { id: pending.to_user.id },
+          'have_money',
+          amount,
+        );
+        await userRepo.increment(
+          { id: pending.to_user.id },
+          'get_salary',
+          amount,
+        );
         await this.createAutoExpense(pending.from_user, 'Salary', amount);
         break;
 
       case TransferPurpose.INCENTIVE:
-        await userRepo.decrement({ id: pending.from_user.id }, 'have_money', amount);
-        await userRepo.increment({ id: pending.to_user.id }, 'have_money', amount);
-        await userRepo.increment({ id: pending.to_user.id }, 'incentive', amount);
+        await userRepo.decrement(
+          { id: pending.from_user.id },
+          'have_money',
+          amount,
+        );
+        await userRepo.increment(
+          { id: pending.to_user.id },
+          'have_money',
+          amount,
+        );
+        await userRepo.increment(
+          { id: pending.to_user.id },
+          'incentive',
+          amount,
+        );
         await this.createAutoExpense(pending.from_user, 'Incentive', amount);
         break;
 
       case TransferPurpose.DEBT_PAYMENT:
-        await userRepo.decrement({ id: pending.from_user.id }, 'have_money', amount);
+        await userRepo.decrement(
+          { id: pending.from_user.id },
+          'have_money',
+          amount,
+        );
         await userRepo.decrement({ id: pending.to_user.id }, 'debt', amount);
         break;
 
       case TransferPurpose.PURCHASE_PRODUCT:
       case TransferPurpose.OTHER:
-        await userRepo.decrement({ id: pending.from_user.id }, 'have_money', amount);
-        await userRepo.increment({ id: pending.to_user.id }, 'have_money', amount);
+        await userRepo.decrement(
+          { id: pending.from_user.id },
+          'have_money',
+          amount,
+        );
+        await userRepo.increment(
+          { id: pending.to_user.id },
+          'have_money',
+          amount,
+        );
         break;
     }
 
@@ -118,9 +157,10 @@ export class TransactionService {
     };
   }
 
-  async declineTransfer(transferId: number) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-    const pendingRepo = await this.tenantDbService.getRepository(PendingBalanceTransferEntity);
+  async declineTransfer(transferId: number, currentUserId: number) {
+    const pendingRepo = await this.tenantDbService.getRepository(
+      PendingBalanceTransferEntity,
+    );
 
     const pending = await pendingRepo.findOne({
       where: { id: transferId },
@@ -129,7 +169,9 @@ export class TransactionService {
     if (!pending) throw new NotFoundException('Pending transfer not found');
 
     if (pending.to_user.id !== currentUserId) {
-      throw new BadRequestException('Only the recipient can decline this transfer');
+      throw new BadRequestException(
+        'Only the recipient can decline this transfer',
+      );
     }
 
     await pendingRepo.delete({ id: transferId });
@@ -140,9 +182,10 @@ export class TransactionService {
     };
   }
 
-  async getPendingTransfers() {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-    const pendingRepo = await this.tenantDbService.getRepository(PendingBalanceTransferEntity);
+  async getPendingTransfers(currentUserId: number) {
+    const pendingRepo = await this.tenantDbService.getRepository(
+      PendingBalanceTransferEntity,
+    );
 
     const transfers = await pendingRepo.find({
       where: { to_user: { id: currentUserId } },
@@ -181,12 +224,21 @@ export class TransactionService {
     };
   }
 
-  private async createAutoExpense(user: UserEntity, categoryName: string, amount: number) {
+  private async createAutoExpense(
+    user: UserEntity,
+    categoryName: string,
+    amount: number,
+  ) {
     try {
-      const categoryRepo = await this.tenantDbService.getRepository(ExpenseCategoryEntity);
-      const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+      const categoryRepo = await this.tenantDbService.getRepository(
+        ExpenseCategoryEntity,
+      );
+      const expenseRepo =
+        await this.tenantDbService.getRepository(ExpenseEntity);
 
-      const category = await categoryRepo.findOne({ where: { name: categoryName } });
+      const category = await categoryRepo.findOne({
+        where: { name: categoryName },
+      });
       if (!category) return;
 
       const expense = expenseRepo.create({

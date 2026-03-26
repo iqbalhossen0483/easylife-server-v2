@@ -11,7 +11,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from 'src/decorators/currentUser';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
+import type { JWT_Payload } from 'src/types/common';
 import {
   CollectPaymentDto,
   CreateOrderDto,
@@ -27,8 +29,11 @@ export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Post('/create')
-  async create(@Body() payload: CreateOrderDto) {
-    return this.orderService.createOrder(payload);
+  async create(
+    @Body() payload: CreateOrderDto,
+    @CurrentUser() user: JWT_Payload,
+  ) {
+    return this.orderService.createOrder(payload, user.sub);
   }
 
   @Get('/all')
@@ -58,8 +63,9 @@ export class OrderController {
   async collect(
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: CollectPaymentDto,
+    @CurrentUser() user: JWT_Payload,
   ) {
-    return this.orderService.collectPayment(id, payload);
+    return this.orderService.collectPayment(id, payload, user.sub);
   }
 
   @Delete('/delete/:id')

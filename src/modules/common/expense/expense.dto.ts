@@ -1,12 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import {
-  IsEnum,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  Min,
-} from 'class-validator';
+import { IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
 import { ExpenseStatus } from 'src/entites/expense.entity';
 
 export class CreateExpenseDto {

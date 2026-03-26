@@ -24,18 +24,21 @@ import {
 export class PurchaseService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async createPurchase(payload: CreatePurchaseDto, fileNames: string[]) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-
-    const supplierRepo = await this.tenantDbService.getRepository(SupplierEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const purchaseRepo = await this.tenantDbService.getRepository(PurchaseEntity);
+  async createPurchase(
+    payload: CreatePurchaseDto,
+    fileNames: string[],
+    currentUserId: number,
+  ) {
+    const supplierRepo =
+      await this.tenantDbService.getRepository(SupplierEntity);
+    const purchaseRepo =
+      await this.tenantDbService.getRepository(PurchaseEntity);
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
-    const supplier = await supplierRepo.findOne({ where: { id: payload.supplier_id } });
+    const supplier = await supplierRepo.findOne({
+      where: { id: payload.supplier_id },
+    });
     if (!supplier) throw new NotFoundException('Supplier not found');
-
-    const currentUser = await userRepo.findOne({ where: { id: currentUserId } });
 
     const paymentAmount = payload.payment ?? 0;
     const dueAmount = payload.total_amount - paymentAmount;
@@ -52,7 +55,7 @@ export class PurchaseService {
 
     const purchase = purchaseRepo.create({
       supplier,
-      purchased_by: currentUser,
+      purchased_by: { id: currentUserId } as UserEntity,
       total_amount: payload.total_amount,
       payment: paymentAmount,
       due: dueAmount,
@@ -64,19 +67,36 @@ export class PurchaseService {
     await purchaseRepo.save(purchase);
 
     // Update supplier financials
-    await supplierRepo.increment({ id: supplier.id }, 'total_purchased', payload.total_amount);
-    await supplierRepo.increment({ id: supplier.id }, 'give_amount', paymentAmount);
+    await supplierRepo.increment(
+      { id: supplier.id },
+      'total_purchased',
+      payload.total_amount,
+    );
+    await supplierRepo.increment(
+      { id: supplier.id },
+      'give_amount',
+      paymentAmount,
+    );
     await supplierRepo.increment({ id: supplier.id }, 'debt_amount', dueAmount);
 
     // Update product stock
     for (const item of payload.products) {
       await productRepo.increment({ id: item.product_id }, 'stock', item.qty);
-      await productRepo.increment({ id: item.product_id }, 'purchased', item.qty);
+      await productRepo.increment(
+        { id: item.product_id },
+        'purchased',
+        item.qty,
+      );
     }
 
     // Update user cash balance
-    if (currentUser && paymentAmount > 0) {
-      await userRepo.decrement({ id: currentUser.id }, 'have_money', paymentAmount);
+    if (paymentAmount > 0) {
+      const userRepo = await this.tenantDbService.getRepository(UserEntity);
+      await userRepo.decrement(
+        { id: currentUserId },
+        'have_money',
+        paymentAmount,
+      );
     }
 
     // TODO: Create transaction history, update cash/stock reports
@@ -88,9 +108,14 @@ export class PurchaseService {
     };
   }
 
-  async getAllPurchases({ page = 1, limit = 10, supplier_id }: GetAllPurchaseDto) {
+  async getAllPurchases({
+    page = 1,
+    limit = 10,
+    supplier_id,
+  }: GetAllPurchaseDto) {
     const skip = (page - 1) * limit;
-    const purchaseRepo = await this.tenantDbService.getRepository(PurchaseEntity);
+    const purchaseRepo =
+      await this.tenantDbService.getRepository(PurchaseEntity);
 
     const query: FindOptionsWhere<PurchaseEntity> = {};
     if (supplier_id) query.supplier = { id: supplier_id };
@@ -122,10 +147,13 @@ export class PurchaseService {
     };
   }
 
-  async paySupplier(purchaseId: number, payload: PaySupplierDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-
-    const purchaseRepo = await this.tenantDbService.getRepository(PurchaseEntity);
+  async paySupplier(
+    purchaseId: number,
+    payload: PaySupplierDto,
+    currentUserId: number,
+  ) {
+    const purchaseRepo =
+      await this.tenantDbService.getRepository(PurchaseEntity);
     const purchase = await purchaseRepo.findOne({
       where: { id: purchaseId },
       relations: { supplier: true },
@@ -137,13 +165,13 @@ export class PurchaseService {
     }
 
     // Create payment record
-    const pcRepo = await this.tenantDbService.getRepository(PurchaseCollectionEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const sender = await userRepo.findOne({ where: { id: currentUserId } });
+    const pcRepo = await this.tenantDbService.getRepository(
+      PurchaseCollectionEntity,
+    );
 
     const collection = pcRepo.create({
       purchase,
-      sender,
+      sender: { id: currentUserId } as UserEntity,
       amount: payload.amount,
       notes: payload.notes,
     });
@@ -155,14 +183,27 @@ export class PurchaseService {
     await purchaseRepo.save(purchase);
 
     // Update supplier
-    const supplierRepo = await this.tenantDbService.getRepository(SupplierEntity);
-    await supplierRepo.increment({ id: purchase.supplier.id }, 'give_amount', payload.amount);
-    await supplierRepo.decrement({ id: purchase.supplier.id }, 'debt_amount', payload.amount);
+    const supplierRepo =
+      await this.tenantDbService.getRepository(SupplierEntity);
+    await supplierRepo.increment(
+      { id: purchase.supplier.id },
+      'give_amount',
+      payload.amount,
+    );
+    await supplierRepo.decrement(
+      { id: purchase.supplier.id },
+      'debt_amount',
+      payload.amount,
+    );
 
     // Update user balance
-    if (sender) {
-      await userRepo.decrement({ id: sender.id }, 'have_money', payload.amount);
-    }
+    // Update sender balance
+    const userRepo = await this.tenantDbService.getRepository(UserEntity);
+    await userRepo.decrement(
+      { id: currentUserId },
+      'have_money',
+      payload.amount,
+    );
 
     // TODO: Update cash reports
 

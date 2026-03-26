@@ -19,7 +19,13 @@ export class PurchaseEntity {
   @JoinColumn({ name: 'supplier_id' })
   supplier: SupplierEntity;
 
-  @Column({ name: 'total_amount', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_amount',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_amount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -38,7 +44,9 @@ export class PurchaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   files: string[];
 
-  @OneToMany(() => PurchaseProductEntity, (pp) => pp.purchase, { cascade: true })
+  @OneToMany(() => PurchaseProductEntity, (pp) => pp.purchase, {
+    cascade: true,
+  })
   products: PurchaseProductEntity[];
 
   @OneToMany(() => PurchaseCollectionEntity, (pc) => pc.purchase)
@@ -78,7 +86,9 @@ export class PurchaseCollectionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => PurchaseEntity, (p) => p.collections, { onDelete: 'CASCADE' })
+  @ManyToOne(() => PurchaseEntity, (p) => p.collections, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'purchase_id' })
   purchase: PurchaseEntity;
 

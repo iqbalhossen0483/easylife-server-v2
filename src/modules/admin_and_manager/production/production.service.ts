@@ -14,16 +14,15 @@ import { CreateProductionDto, GetAllProductionDto } from './production.dto';
 export class ProductionService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async createProduction(payload: CreateProductionDto) {
-    const currentUserId = this.tenantDbService.getCurrentUserId();
+  async createProduction(payload: CreateProductionDto, currentUserId: number) {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const productionRepo = await this.tenantDbService.getRepository(ProductionEntity);
-
-    const currentUser = await userRepo.findOne({ where: { id: currentUserId } });
+    const productionRepo =
+      await this.tenantDbService.getRepository(ProductionEntity);
 
     // Verify main product exists
-    const mainProduct = await productRepo.findOne({ where: { id: payload.product_id } });
+    const mainProduct = await productRepo.findOne({
+      where: { id: payload.product_id },
+    });
     if (!mainProduct) throw new NotFoundException('Main product not found');
 
     // Build component records
@@ -39,15 +38,23 @@ export class ProductionService {
       product_id: payload.product_id,
       product_name: payload.product_name,
       production: payload.production,
-      production_by: currentUser,
+      production_by: { id: currentUserId } as UserEntity,
       components,
     });
 
     await productionRepo.save(production);
 
     // Increase main product stock
-    await productRepo.increment({ id: payload.product_id }, 'stock', payload.production);
-    await productRepo.increment({ id: payload.product_id }, 'production', payload.production);
+    await productRepo.increment(
+      { id: payload.product_id },
+      'stock',
+      payload.production,
+    );
+    await productRepo.increment(
+      { id: payload.product_id },
+      'production',
+      payload.production,
+    );
 
     // Decrease component stocks
     for (const comp of payload.components) {
@@ -63,9 +70,14 @@ export class ProductionService {
     };
   }
 
-  async getAllProductions({ page = 1, limit = 10, product_id }: GetAllProductionDto) {
+  async getAllProductions({
+    page = 1,
+    limit = 10,
+    product_id,
+  }: GetAllProductionDto) {
     const skip = (page - 1) * limit;
-    const productionRepo = await this.tenantDbService.getRepository(ProductionEntity);
+    const productionRepo =
+      await this.tenantDbService.getRepository(ProductionEntity);
 
     const query: FindOptionsWhere<ProductionEntity> = {};
     if (product_id) query.product_id = product_id;

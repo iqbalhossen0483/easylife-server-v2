@@ -29,7 +29,12 @@ export class CustomerEntity {
   @Column({ name: 'machine_type', type: 'varchar', length: 50, nullable: true })
   machine_type: string;
 
-  @Column({ name: 'machine_model', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'machine_model',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   machine_model: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
@@ -39,10 +44,22 @@ export class CustomerEntity {
   commission: number;
 
   // Financial fields
-  @Column({ name: 'total_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_sale: number;
 
-  @Column({ name: 'due_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'due_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   due_sale: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })

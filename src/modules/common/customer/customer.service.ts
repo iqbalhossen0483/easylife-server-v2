@@ -29,7 +29,7 @@ export class CustomerService {
     }
   }
 
-  async createCustomer(payload: CreateCustomerDto) {
+  async createCustomer(payload: CreateCustomerDto, currentUserId: number) {
     const customerRepo =
       await this.tenantDbService.getRepository(CustomerEntity);
 
@@ -40,14 +40,10 @@ export class CustomerService {
       throw new ConflictException('Customer with this phone already exists');
     }
 
-    // Get current user for added_by
-    const currentUserId = this.tenantDbService.getCurrentUserId();
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const currentUser = await userRepo.findOne({
-      where: { id: currentUserId },
+    const customer = customerRepo.create({
+      ...payload,
+      added_by: { id: currentUserId } as UserEntity,
     });
-
-    const customer = customerRepo.create({ ...payload, added_by: currentUser });
     await customerRepo.save(customer);
 
     // Increment tenant customer count

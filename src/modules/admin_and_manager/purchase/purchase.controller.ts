@@ -14,10 +14,12 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { multiFileMulterConfig } from 'src/configs/multer.config';
+import { CurrentUser } from 'src/decorators/currentUser';
 import { Role } from 'src/decorators/Role.decorators';
 import { Designation } from 'src/entites/user.entity';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { RoleGaurd } from 'src/guards/RoleGaurd';
+import type { JWT_Payload } from 'src/types/common';
 import {
   CreatePurchaseDto,
   GetAllPurchaseDto,
@@ -37,10 +39,11 @@ export class PurchaseController {
   @ApiConsumes('multipart/form-data')
   async create(
     @Body() payload: CreatePurchaseDto,
+    @CurrentUser() user: JWT_Payload,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
     const fileNames = files?.map((f) => f.filename) ?? [];
-    return this.purchaseService.createPurchase(payload, fileNames);
+    return this.purchaseService.createPurchase(payload, fileNames, user.sub);
   }
 
   @Get('/all')
@@ -52,7 +55,8 @@ export class PurchaseController {
   async paySupplier(
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: PaySupplierDto,
+    @CurrentUser() user: JWT_Payload,
   ) {
-    return this.purchaseService.paySupplier(id, payload);
+    return this.purchaseService.paySupplier(id, payload, user.sub);
   }
 }

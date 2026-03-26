@@ -42,10 +42,7 @@ export class CreateCustomerDto {
   @ApiPropertyOptional({ example: 5.0 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber(
-    { maxDecimalPlaces: 2 },
-    { message: 'Commission must be a number' },
-  )
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Commission must be a number' })
   @Min(0, { message: 'Commission must be at least 0' })
   @Max(100, { message: 'Commission must be at most 100' })
   commission?: number;
@@ -87,10 +84,7 @@ export class UpdateCustomerDto {
   @ApiPropertyOptional({ example: 7.5 })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber(
-    { maxDecimalPlaces: 2 },
-    { message: 'Commission must be a number' },
-  )
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Commission must be a number' })
   @Min(0, { message: 'Commission must be at least 0' })
   @Max(100, { message: 'Commission must be at most 100' })
   commission?: number;

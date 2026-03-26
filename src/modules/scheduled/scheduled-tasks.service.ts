@@ -1,70 +1,78 @@
+import type { LoggerService } from '@nestjs/common';
 import { Inject, Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import Redis from 'ioredis';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { REDIS_CLIENT } from 'src/configs/redis.config.module';
+import { TenantConnectionManager } from 'src/database/tenant-connection.manager';
 import { DbListEntity } from 'src/entites/dbList.entity';
-import { Repository, DataSource } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
+import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
 import { DailyCashReportEntity } from 'src/entites/report.entity';
-import { CommissionStatus } from 'src/entites/target.entity';
+import { CommissionStatus, Target } from 'src/entites/target.entity';
+import { LessThan, Repository } from 'typeorm';
 
 @Injectable()
 export class ScheduledTasksService {
   constructor(
     @Inject(REDIS_CLIENT) private readonly redis: Redis,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: LoggerService,
     @InjectRepository(DbListEntity)
     private readonly dbListRepo: Repository<DbListEntity>,
-    private readonly configService: ConfigService,
+    private readonly connectionManager: TenantConnectionManager,
   ) {}
 
-  // Run daily at midnight Asia/Dhaka (UTC+6 = 18:00 UTC previous day)
   @Cron('0 18 * * *', { name: 'daily_tasks' })
   async handleDailyTasks() {
     const lockKey = 'daily_tasks_lock';
     const lockAcquired = await this.redis.set(lockKey, '1', 'EX', 300, 'NX');
 
     if (!lockAcquired) {
-      return; // Another instance is running
+      this.logger.log('Daily tasks already running, skipping', 'CronJob');
+      return;
     }
+
+    this.logger.log('Starting daily tasks', 'CronJob');
 
     try {
       const tenants = await this.dbListRepo.find();
 
       for (const tenant of tenants) {
         try {
-          const ds = new DataSource({
-            type: 'postgres',
-            host: this.configService.get<string>('DB_HOST'),
-            port: this.configService.get<number>('DB_PORT'),
-            username: this.configService.get<string>('DB_USERNAME'),
-            password: this.configService.get<string>('DB_PASS'),
-            database: tenant.name,
-            entities: [DailyCashReportEntity],
-            synchronize: false,
-          });
-
-          await ds.initialize();
-
-          await this.createDailyCashReport(ds);
-          await this.processExpiredTargets(ds);
-
-          await ds.destroy();
+          await this.createDailyCashReport(tenant.name);
+          await this.processExpiredTargets(tenant.name);
+          this.logger.log(
+            `Daily tasks completed for tenant: ${tenant.name}`,
+            'CronJob',
+          );
         } catch (err) {
-          console.error(`Daily task failed for tenant ${tenant.name}:`, err);
+          this.logger.error(
+            `Daily task failed for tenant ${tenant.name}`,
+            err instanceof Error ? err.stack : String(err),
+            'CronJob',
+          );
         }
       }
+
+      this.logger.log('All daily tasks completed', 'CronJob');
     } finally {
       await this.redis.del(lockKey);
     }
   }
 
-  private async createDailyCashReport(ds: DataSource) {
-    const repo = ds.getRepository(DailyCashReportEntity);
+  private async createDailyCashReport(dbName: string) {
+    const repo = await this.connectionManager.getRepository(
+      dbName,
+      DailyCashReportEntity,
+    );
+
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
 
-    const existing = await repo.findOne({ where: { date: new Date(dateStr) } });
+    const existing = await repo.findOne({
+      where: { date: new Date(dateStr) },
+    });
     if (existing) return;
 
     // Get yesterday's closing as today's opening
@@ -87,38 +95,56 @@ export class ScheduledTasksService {
     await repo.save(report);
   }
 
-  private async processExpiredTargets(ds: DataSource) {
-    // Using raw query since Target entity imports are complex for standalone DataSource
-    const result = await ds.query(
-      `UPDATE user_commision_target
-       SET status = CASE
-         WHEN achived_amnt >= targeted_amnt THEN 'achived'
-         ELSE 'failed'
-       END
-       WHERE status = 'running'
-         AND end_date < NOW()`,
+  private async processExpiredTargets(dbName: string) {
+    const targetRepo = await this.connectionManager.getRepository(
+      dbName,
+      Target,
+    );
+    const pcRepo = await this.connectionManager.getRepository(
+      dbName,
+      PendingCommissionEntity,
     );
 
-    // Create pending commissions for achieved targets
-    const achieved = await ds.query(
-      `SELECT id, user_id, targeted_amnt, achived_amnt, commission_percentage
-       FROM user_commision_target
-       WHERE status = 'achived'
-         AND id NOT IN (SELECT target_id FROM pending_commissions)
-         AND end_date < NOW()
-         AND deleted_at IS NULL`,
-    );
+    // Find expired running targets
+    const expiredTargets = await targetRepo.find({
+      where: {
+        status: CommissionStatus.RUNNING,
+        end_date: LessThan(new Date()),
+      },
+      relations: { user: true },
+    });
 
-    for (const target of achieved) {
-      const commission =
-        Math.min(Number(target.targeted_amnt), Number(target.achived_amnt)) *
-        Number(target.commission_percentage) / 100;
+    for (const target of expiredTargets) {
+      const achieved = Number(target.achived_amnt);
+      const targeted = Number(target.targeted_amnt);
 
-      await ds.query(
-        `INSERT INTO pending_commissions (user_id, target_id, commission, achieved, created_at)
-         VALUES ($1, $2, $3, $4, NOW())`,
-        [target.user_id, target.id, commission, target.achived_amnt],
-      );
+      // Mark as achieved or failed
+      target.status =
+        achieved >= targeted
+          ? CommissionStatus.ACHIVED
+          : CommissionStatus.FAILED;
+      await targetRepo.save(target);
+
+      // Create pending commission for achieved targets
+      if (target.status === CommissionStatus.ACHIVED) {
+        const alreadyExists = await pcRepo.findOne({
+          where: { target: { id: target.id } },
+        });
+        if (alreadyExists) continue;
+
+        const commission =
+          (Math.min(targeted, achieved) *
+            Number(target.commission_percentage)) /
+          100;
+
+        const pending = pcRepo.create({
+          user: target.user,
+          target,
+          commission,
+          achieved,
+        });
+        await pcRepo.save(pending);
+      }
     }
   }
 }

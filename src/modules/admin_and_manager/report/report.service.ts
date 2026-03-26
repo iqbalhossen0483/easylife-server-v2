@@ -18,11 +18,16 @@ export class ReportService {
 
   async getDashboard() {
     const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
     const endOfDay = new Date(startOfDay.getTime() + 86400000 - 1);
 
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const customerRepo = await this.tenantDbService.getRepository(CustomerEntity);
+    const customerRepo =
+      await this.tenantDbService.getRepository(CustomerEntity);
     const userRepo = await this.tenantDbService.getRepository(UserEntity);
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
@@ -31,8 +36,14 @@ export class ReportService {
       where: { created_at: Between(startOfDay, endOfDay) },
     });
 
-    const todaySale = todayOrders.reduce((sum, o) => sum + Number(o.total_sale), 0);
-    const todayCollection = todayOrders.reduce((sum, o) => sum + Number(o.payment), 0);
+    const todaySale = todayOrders.reduce(
+      (sum, o) => sum + Number(o.total_sale),
+      0,
+    );
+    const todayCollection = todayOrders.reduce(
+      (sum, o) => sum + Number(o.payment),
+      0,
+    );
     const todayDue = todayOrders.reduce((sum, o) => sum + Number(o.due), 0);
 
     const undeliveredCount = await orderRepo.count({
@@ -63,21 +74,29 @@ export class ReportService {
 
   async getCashReport(method: 'date' | 'month' | 'year', value?: string) {
     if (method === 'date') {
-      const repo = await this.tenantDbService.getRepository(DailyCashReportEntity);
+      const repo = await this.tenantDbService.getRepository(
+        DailyCashReportEntity,
+      );
       const date = value ?? new Date().toISOString().split('T')[0];
       const report = await repo.findOne({ where: { date: new Date(date) } });
       return { success: true, message: 'Daily cash report', data: report };
     }
 
     if (method === 'month') {
-      const repo = await this.tenantDbService.getRepository(MonthlyCashReportEntity);
+      const repo = await this.tenantDbService.getRepository(
+        MonthlyCashReportEntity,
+      );
       const now = new Date();
-      const [y, m] = value ? value.split('-').map(Number) : [now.getFullYear(), now.getMonth() + 1];
+      const [y, m] = value
+        ? value.split('-').map(Number)
+        : [now.getFullYear(), now.getMonth() + 1];
       const report = await repo.findOne({ where: { year: y, month: m } });
       return { success: true, message: 'Monthly cash report', data: report };
     }
 
-    const repo = await this.tenantDbService.getRepository(YearlyCashReportEntity);
+    const repo = await this.tenantDbService.getRepository(
+      YearlyCashReportEntity,
+    );
     const year = value ? Number(value) : new Date().getFullYear();
     const report = await repo.findOne({ where: { year } });
     return { success: true, message: 'Yearly cash report', data: report };
@@ -165,7 +184,13 @@ export class ReportService {
   async getProductChartData() {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
     const products = await productRepo.find({
-      select: { id: true, name: true, sold: true, stock: true, purchased: true },
+      select: {
+        id: true,
+        name: true,
+        sold: true,
+        stock: true,
+        purchased: true,
+      },
       order: { sold: 'DESC' },
       take: 20,
     });

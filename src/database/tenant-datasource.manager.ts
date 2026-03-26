@@ -4,42 +4,24 @@ import {
   Scope,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CustomerEntity } from 'src/entites/customer.entity';
 import { DbListEntity } from 'src/entites/dbList.entity';
-import { ExpenseCategoryEntity, ExpenseEntity } from 'src/entites/expense.entity';
-import { NotesEntity } from 'src/entites/notes.entity';
-import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
-import { CollectionEntity, OrderEntity, OrderProductEntity } from 'src/entites/order.entity';
-import { ProductEntity } from 'src/entites/product.entity';
-import { ProductionEntity, ProductionProductEntity } from 'src/entites/production.entity';
-import { PurchaseCollectionEntity, PurchaseEntity, PurchaseProductEntity } from 'src/entites/purchase.entity';
-import {
-  DailyCashReportEntity, MonthlyCashReportEntity, YearlyCashReportEntity,
-  DailyStockReportEntity, MonthlyStockReportEntity, YearlyStockReportEntity,
-} from 'src/entites/report.entity';
-import { SupplierEntity } from 'src/entites/supplier.entity';
-import { Target } from 'src/entites/target.entity';
-import { PendingBalanceTransferEntity, TransactionEntity } from 'src/entites/transaction.entity';
-import { UserEntity } from 'src/entites/user.entity';
 import { JWT_Payload } from 'src/types/common';
-import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { EntityTarget, ObjectLiteral, Repository } from 'typeorm';
+import { TenantConnectionManager } from './tenant-connection.manager';
 
 @Injectable({ scope: Scope.REQUEST })
 export class TenantDatabaseService {
-  private tenantDataSources = new Map<string, DataSource>();
-
   constructor(
-    private readonly configService: ConfigService,
+    private readonly connectionManager: TenantConnectionManager,
     @Inject(REQUEST)
     private readonly request: Request & { tenantId: number; user: JWT_Payload },
     @InjectRepository(DbListEntity)
     private readonly dbListRepo: Repository<DbListEntity>,
   ) {}
 
-  private async getDataSource(): Promise<DataSource> {
+  private async getDbName(): Promise<string> {
     const database = await this.dbListRepo.findOne({
       where: { id: this.request.tenantId },
     });
@@ -47,44 +29,15 @@ export class TenantDatabaseService {
     if (!database) {
       throw new UnauthorizedException('Authentication failed');
     }
-    const dbName = database.name;
 
-    if (this.tenantDataSources.has(dbName)) {
-      return this.tenantDataSources.get(dbName)!;
-    }
-
-    const dataSource = new DataSource({
-      type: 'postgres',
-      host: this.configService.get<string>('DB_HOST'),
-      port: this.configService.get<number>('DB_PORT'),
-      username: this.configService.get<string>('DB_USERNAME'),
-      password: this.configService.get<string>('DB_PASS'),
-      database: dbName,
-      entities: [
-            UserEntity, Target, NotesEntity, ExpenseCategoryEntity, ExpenseEntity,
-            CustomerEntity, ProductEntity, SupplierEntity,
-            OrderEntity, OrderProductEntity, CollectionEntity,
-            PurchaseEntity, PurchaseProductEntity, PurchaseCollectionEntity,
-            ProductionEntity, ProductionProductEntity,
-            PendingCommissionEntity,
-            TransactionEntity, PendingBalanceTransferEntity,
-            DailyCashReportEntity, MonthlyCashReportEntity, YearlyCashReportEntity,
-            DailyStockReportEntity, MonthlyStockReportEntity, YearlyStockReportEntity,
-          ],
-      synchronize: true,
-    });
-
-    await dataSource.initialize();
-    this.tenantDataSources.set(dbName, dataSource);
-
-    return dataSource;
+    return database.name;
   }
 
   async getRepository<T extends ObjectLiteral>(
     entity: EntityTarget<T>,
   ): Promise<Repository<T>> {
-    const dataSource = await this.getDataSource();
-    return dataSource.getRepository<T>(entity);
+    const dbName = await this.getDbName();
+    return this.connectionManager.getRepository(dbName, entity);
   }
 
   async getDataDatabase() {

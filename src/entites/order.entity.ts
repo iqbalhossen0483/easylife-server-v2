@@ -34,7 +34,13 @@ export class OrderEntity {
   @JoinColumn({ name: 'delivered_by' })
   delivered_by: UserEntity;
 
-  @Column({ name: 'total_sale', type: 'decimal', precision: 12, scale: 2, default: 0 })
+  @Column({
+    name: 'total_sale',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
   total_sale: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
@@ -74,7 +80,9 @@ export class OrderProductEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => OrderEntity, (order) => order.products, { onDelete: 'CASCADE' })
+  @ManyToOne(() => OrderEntity, (order) => order.products, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
 
@@ -99,7 +107,9 @@ export class CollectionEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => OrderEntity, (order) => order.collections, { onDelete: 'CASCADE' })
+  @ManyToOne(() => OrderEntity, (order) => order.collections, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'order_id' })
   order: OrderEntity;
 
