@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 70 / 155 tasks completed (45%)
+## Progress: 92 / 155 tasks completed (59%)
 
 ---
 
@@ -90,33 +90,33 @@
 
 ## 6. Product Management
 
-- [ ] 6.1 Create ProductEntity with all fields
-- [ ] 6.2 Create CreateProductDto with validation
-- [ ] 6.3 Create UpdateProductDto (partial)
-- [ ] 6.4 Create GetAllProductDto (pagination + search)
-- [ ] 6.5 Implement create product endpoint (POST /product/create)
-- [ ] 6.6 Implement list products endpoint (GET /product/all)
-- [ ] 6.7 Implement get single product endpoint
-- [ ] 6.8 Implement update product endpoint (PUT /product/update/:id)
-- [ ] 6.9 Implement delete product endpoint
-- [ ] 6.10 Add product image upload on create/update
-- [ ] 6.11 Add inventory fields (stock, purchased, sold, production)
+- [x] 6.1 Create ProductEntity with all fields
+- [x] 6.2 Create CreateProductDto with validation
+- [x] 6.3 Create UpdateProductDto (partial)
+- [x] 6.4 Create GetAllProductDto (pagination + search)
+- [x] 6.5 Implement create product endpoint (POST /product/create)
+- [x] 6.6 Implement list products endpoint (GET /product/all)
+- [x] 6.7 Implement get single product endpoint
+- [x] 6.8 Implement update product endpoint (PUT /product/update/:id)
+- [x] 6.9 Implement delete product endpoint
+- [x] 6.10 Add product image upload on create/update
+- [x] 6.11 Add inventory fields (stock, purchased, sold, production)
 
 ---
 
 ## 7. Supplier Management
 
-- [ ] 7.1 Create SupplierEntity with all fields
-- [ ] 7.2 Create CreateSupplierDto with validation
-- [ ] 7.3 Create UpdateSupplierDto (partial)
-- [ ] 7.4 Create GetAllSupplierDto (pagination + search)
-- [ ] 7.5 Implement create supplier endpoint (POST /supplier/create)
-- [ ] 7.6 Implement list suppliers endpoint (GET /supplier/all)
-- [ ] 7.7 Implement get single supplier endpoint with purchase history
-- [ ] 7.8 Implement update supplier endpoint (PUT /supplier/update/:id)
-- [ ] 7.9 Implement delete supplier endpoint
-- [ ] 7.10 Add supplier image upload on create/update
-- [ ] 7.11 Add supplier financial fields (totalPurchased, giveAmount, debtAmount, discount)
+- [x] 7.1 Create SupplierEntity with all fields
+- [x] 7.2 Create CreateSupplierDto with validation
+- [x] 7.3 Create UpdateSupplierDto (partial)
+- [x] 7.4 Create GetAllSupplierDto (pagination + search)
+- [x] 7.5 Implement create supplier endpoint (POST /supplier/create)
+- [x] 7.6 Implement list suppliers endpoint (GET /supplier/all)
+- [x] 7.7 Implement get single supplier endpoint with purchase history
+- [x] 7.8 Implement update supplier endpoint (PUT /supplier/update/:id)
+- [x] 7.9 Implement delete supplier endpoint
+- [x] 7.10 Add supplier image upload on create/update
+- [x] 7.11 Add supplier financial fields (totalPurchased, giveAmount, debtAmount, discount)
 
 ---
 
