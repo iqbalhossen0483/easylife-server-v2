@@ -11,12 +11,14 @@ import { CustomerEntity } from 'src/entites/customer.entity';
 import { DbListEntity } from 'src/entites/dbList.entity';
 import { ExpenseCategoryEntity, ExpenseEntity } from 'src/entites/expense.entity';
 import { NotesEntity } from 'src/entites/notes.entity';
+import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
 import { CollectionEntity, OrderEntity, OrderProductEntity } from 'src/entites/order.entity';
 import { ProductEntity } from 'src/entites/product.entity';
 import { ProductionEntity, ProductionProductEntity } from 'src/entites/production.entity';
 import { PurchaseCollectionEntity, PurchaseEntity, PurchaseProductEntity } from 'src/entites/purchase.entity';
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { Target } from 'src/entites/target.entity';
+import { PendingBalanceTransferEntity, TransactionEntity } from 'src/entites/transaction.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { JWT_Payload } from 'src/types/common';
 import { DataSource, EntityTarget, ObjectLiteral, Repository } from 'typeorm';
@@ -60,6 +62,8 @@ export class TenantDatabaseService {
             OrderEntity, OrderProductEntity, CollectionEntity,
             PurchaseEntity, PurchaseProductEntity, PurchaseCollectionEntity,
             ProductionEntity, ProductionProductEntity,
+            PendingCommissionEntity,
+            TransactionEntity, PendingBalanceTransferEntity,
           ],
       synchronize: true,
     });

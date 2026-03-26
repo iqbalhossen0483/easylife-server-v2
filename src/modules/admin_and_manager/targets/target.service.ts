@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import moment from 'moment';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
 import { CommissionStatus, Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { NotificationService } from 'src/services/notification.service';
@@ -275,6 +276,60 @@ export class TargetService {
     return {
       success: true,
       message: 'Target deleted successfully',
+    };
+  }
+
+  async getPendingCommissions() {
+    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+    const commissions = await pcRepo.find({
+      relations: { user: true, target: true },
+      select: {
+        user: { id: true, name: true, phone: true },
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    return {
+      success: true,
+      message: 'Pending commissions fetched successfully',
+      data: commissions,
+    };
+  }
+
+  async approveCommission(commissionId: number) {
+    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+    const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
+
+    const pending = await pcRepo.findOne({
+      where: { id: commissionId },
+      relations: { user: true, target: true },
+    });
+    if (!pending) throw new NotFoundException('Pending commission not found');
+
+    // Add commission to user balance
+    await userRepo.increment({ id: pending.user.id }, 'have_money', pending.commission);
+    await userRepo.increment({ id: pending.user.id }, 'incentive', pending.commission);
+
+    // Remove pending record
+    await pcRepo.delete({ id: commissionId });
+
+    return {
+      success: true,
+      message: 'Commission approved and transferred to user',
+    };
+  }
+
+  async rejectCommission(commissionId: number) {
+    const pcRepo = await this.tenantDatabaseService.getRepository(PendingCommissionEntity);
+
+    const pending = await pcRepo.findOne({ where: { id: commissionId } });
+    if (!pending) throw new NotFoundException('Pending commission not found');
+
+    await pcRepo.delete({ id: commissionId });
+
+    return {
+      success: true,
+      message: 'Commission rejected',
     };
   }
 }

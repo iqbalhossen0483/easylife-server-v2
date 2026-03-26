@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 128 / 155 tasks completed (83%)
+## Progress: 143 / 155 tasks completed (92%)
 
 ---
 
@@ -221,26 +221,26 @@
 - [x] 12.9 Implement soft delete target endpoint
 - [x] 12.10 Add push notification on target creation/update
 - [x] 12.11 Add conflict prevention (max 1 pending/running per user)
-- [ ] 12.12 Create PendingCommissionEntity
-- [ ] 12.13 Implement auto-update achieved amount on order delivery
-- [ ] 12.14 Implement commission approval endpoint (POST /commission/approve/:id)
-- [ ] 12.15 Implement commission rejection endpoint (DELETE /commission/reject/:id)
-- [ ] 12.16 Implement commission calculation logic (split between delivery/creator)
+- [x] 12.12 Create PendingCommissionEntity
+- [x] 12.13 Implement auto-update achieved amount on order delivery
+- [x] 12.14 Implement commission approval endpoint (POST /commission/approve/:id)
+- [x] 12.15 Implement commission rejection endpoint (DELETE /commission/reject/:id)
+- [x] 12.16 Implement commission calculation logic (split between delivery/creator)
 
 ---
 
 ## 13. Balance Transfer & Transactions
 
-- [ ] 13.1 Create TransactionEntity with all fields
-- [ ] 13.2 Create PendingBalanceTransferEntity
-- [ ] 13.3 Create BalanceTransferDto with validation
-- [ ] 13.4 Create ReceiveTransferDto
-- [ ] 13.5 Implement initiate transfer endpoint (POST /transaction/transfer)
-- [ ] 13.6 Implement accept transfer endpoint (POST /transaction/receive/:id)
-- [ ] 13.7 Implement decline transfer endpoint (DELETE /transaction/decline/:id)
-- [ ] 13.8 Implement transfer purpose logic (Salary, Incentive, Debt Payment, Purchase)
-- [ ] 13.9 Auto-create expense for Salary/Incentive transfers
-- [ ] 13.10 Create transaction history on completion
+- [x] 13.1 Create TransactionEntity with all fields
+- [x] 13.2 Create PendingBalanceTransferEntity
+- [x] 13.3 Create BalanceTransferDto with validation
+- [x] 13.4 Create ReceiveTransferDto
+- [x] 13.5 Implement initiate transfer endpoint (POST /transaction/transfer)
+- [x] 13.6 Implement accept transfer endpoint (POST /transaction/receive/:id)
+- [x] 13.7 Implement decline transfer endpoint (DELETE /transaction/decline/:id)
+- [x] 13.8 Implement transfer purpose logic (Salary, Incentive, Debt Payment, Purchase)
+- [x] 13.9 Auto-create expense for Salary/Incentive transfers
+- [x] 13.10 Create transaction history on completion
 
 ---
 
