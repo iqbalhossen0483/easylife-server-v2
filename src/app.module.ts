@@ -1,6 +1,12 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import { WinstonModule } from 'nest-winston';
 import { AppConfigModule } from './configs/env.config.module';
 import { JWTConfigModule } from './configs/jwt.config.module';
+import { RedisConfigModule } from './configs/redis.config.module';
+import { ThrottlerConfigModule } from './configs/throttler.config.module';
+import { winstonConfig } from './configs/winston.config';
 import { DatabaseModule } from './database/root.database.module';
 import { TenantDatabaseModule } from './database/tenant.database.module';
 import { ApiValidationPipe } from './middleware/api.validation.pipe';
@@ -15,9 +21,12 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
 @Module({
   imports: [
     AppConfigModule,
+    WinstonModule.forRoot(winstonConfig),
     DatabaseModule,
     TenantDatabaseModule,
     JWTConfigModule,
+    RedisConfigModule,
+    ThrottlerConfigModule,
     AuthModule,
     ExpenseCategoryModule,
     UsersModule,
@@ -26,7 +35,12 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     ReportModule,
     TransactionModule,
   ],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
