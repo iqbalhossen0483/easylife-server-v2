@@ -48,28 +48,38 @@ export class ExpenseCategoryEntity {
   deleted_at: Date;
 }
 
+@Entity('expense_info')
 export class ExpenseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => ExpenseCategoryEntity, (type) => type.id)
-  @JoinColumn({ name: 'type' })
+  @JoinColumn({ name: 'type_id' })
   type: ExpenseCategoryEntity;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
   amount: number;
 
   @Column({ type: 'enum', enum: ExpenseStatus, default: ExpenseStatus.PENDING })
   status: ExpenseStatus;
 
-  @CreateDateColumn()
-  date: Date;
+  @Column({ type: 'text', nullable: true })
+  note: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'created_by' })
   created_by: UserEntity;
 
-  @ManyToOne(() => UserEntity, (user) => user.id)
+  @ManyToOne(() => UserEntity, { nullable: true })
   @JoinColumn({ name: 'approved_by' })
   approved_by: UserEntity;
+
+  @Column({ name: 'approved_at', type: 'timestamp', nullable: true })
+  approved_at: Date;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deleted_at: Date;
 }

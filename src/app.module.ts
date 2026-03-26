@@ -12,12 +12,15 @@ import { TenantDatabaseModule } from './database/tenant.database.module';
 import { ApiValidationPipe } from './middleware/api.validation.pipe';
 import { ExpenseCategoryModule } from './modules/admin_and_manager/expense_category/expense.category.module';
 import { ProductModule } from './modules/admin_and_manager/product/product.module';
+import { ProductionModule } from './modules/admin_and_manager/production/production.module';
+import { PurchaseModule } from './modules/admin_and_manager/purchase/purchase.module';
 import { SupplierModule } from './modules/admin_and_manager/supplier/supplier.module';
 import { ReportModule } from './modules/admin_and_manager/report/report.module';
 import { TargetModule } from './modules/admin_and_manager/targets/target.module';
 import { UsersModule } from './modules/admin_and_manager/user/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomerModule } from './modules/common/customer/customer.module';
+import { ExpenseModule } from './modules/common/expense/expense.module';
 import { NoteModule } from './modules/common/notes/notes.module';
 import { OrderModule } from './modules/common/order/order.module';
 import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
@@ -38,9 +41,12 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     TargetModule,
     ProductModule,
     SupplierModule,
+    PurchaseModule,
+    ProductionModule,
     TenantModule,
     CustomerModule,
     OrderModule,
+    ExpenseModule,
     NoteModule,
     ReportModule,
     TransactionModule,

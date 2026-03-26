@@ -9,11 +9,13 @@ import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CustomerEntity } from 'src/entites/customer.entity';
 import { DbListEntity } from 'src/entites/dbList.entity';
+import { ExpenseCategoryEntity, ExpenseEntity } from 'src/entites/expense.entity';
+import { NotesEntity } from 'src/entites/notes.entity';
 import { CollectionEntity, OrderEntity, OrderProductEntity } from 'src/entites/order.entity';
 import { ProductEntity } from 'src/entites/product.entity';
+import { ProductionEntity, ProductionProductEntity } from 'src/entites/production.entity';
+import { PurchaseCollectionEntity, PurchaseEntity, PurchaseProductEntity } from 'src/entites/purchase.entity';
 import { SupplierEntity } from 'src/entites/supplier.entity';
-import { ExpenseCategoryEntity } from 'src/entites/expense.entity';
-import { NotesEntity } from 'src/entites/notes.entity';
 import { Target } from 'src/entites/target.entity';
 import { UserEntity } from 'src/entites/user.entity';
 import { JWT_Payload } from 'src/types/common';
@@ -52,7 +54,13 @@ export class TenantDatabaseService {
       username: this.configService.get<string>('DB_USERNAME'),
       password: this.configService.get<string>('DB_PASS'),
       database: dbName,
-      entities: [UserEntity, Target, NotesEntity, ExpenseCategoryEntity, CustomerEntity, ProductEntity, SupplierEntity, OrderEntity, OrderProductEntity, CollectionEntity],
+      entities: [
+            UserEntity, Target, NotesEntity, ExpenseCategoryEntity, ExpenseEntity,
+            CustomerEntity, ProductEntity, SupplierEntity,
+            OrderEntity, OrderProductEntity, CollectionEntity,
+            PurchaseEntity, PurchaseProductEntity, PurchaseCollectionEntity,
+            ProductionEntity, ProductionProductEntity,
+          ],
       synchronize: true,
     });
 

@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 112 / 155 tasks completed (72%)
+## Progress: 128 / 155 tasks completed (83%)
 
 ---
 
@@ -147,52 +147,52 @@
 
 ## 9. Purchase Management
 
-- [ ] 9.1 Create PurchaseEntity with all fields
-- [ ] 9.2 Create PurchaseProductEntity (purchase-product junction)
-- [ ] 9.3 Create PurchaseCollectionEntity (payment records)
-- [ ] 9.4 Create CreatePurchaseDto with validation
-- [ ] 9.5 Create PaySupplierDto
-- [ ] 9.6 Create GetAllPurchaseDto (filters)
-- [ ] 9.7 Implement create purchase endpoint (POST /purchase/create)
-- [ ] 9.8 Implement list purchases endpoint (GET /purchase/all)
-- [ ] 9.9 Implement pay supplier endpoint (PUT /purchase/pay/:id)
-- [ ] 9.10 Add file upload for purchase documents
-- [ ] 9.11 Update supplier financials on purchase
-- [ ] 9.12 Update product stock on purchase
-- [ ] 9.13 Update user cash balance on purchase
-- [ ] 9.14 Create transaction history on purchase
-- [ ] 9.15 Update cash/stock reports on purchase
+- [x] 9.1 Create PurchaseEntity with all fields
+- [x] 9.2 Create PurchaseProductEntity (purchase-product junction)
+- [x] 9.3 Create PurchaseCollectionEntity (payment records)
+- [x] 9.4 Create CreatePurchaseDto with validation
+- [x] 9.5 Create PaySupplierDto
+- [x] 9.6 Create GetAllPurchaseDto (filters)
+- [x] 9.7 Implement create purchase endpoint (POST /purchase/create)
+- [x] 9.8 Implement list purchases endpoint (GET /purchase/all)
+- [x] 9.9 Implement pay supplier endpoint (PUT /purchase/pay/:id)
+- [x] 9.10 Add file upload for purchase documents
+- [x] 9.11 Update supplier financials on purchase
+- [x] 9.12 Update product stock on purchase
+- [x] 9.13 Update user cash balance on purchase
+- [x] 9.14 Create transaction history on purchase
+- [x] 9.15 Update cash/stock reports on purchase
 
 ---
 
 ## 10. Production Tracking
 
-- [ ] 10.1 Create ProductionEntity with all fields
-- [ ] 10.2 Create ProductionProductEntity (component junction)
-- [ ] 10.3 Create CreateProductionDto with validation
-- [ ] 10.4 Create GetAllProductionDto (filters)
-- [ ] 10.5 Implement create production endpoint (POST /production/create)
-- [ ] 10.6 Implement list production endpoint (GET /production/all)
-- [ ] 10.7 Update main product stock (increase)
-- [ ] 10.8 Update component product stock (decrease)
-- [ ] 10.9 Update stock reports on production
+- [x] 10.1 Create ProductionEntity with all fields
+- [x] 10.2 Create ProductionProductEntity (component junction)
+- [x] 10.3 Create CreateProductionDto with validation
+- [x] 10.4 Create GetAllProductionDto (filters)
+- [x] 10.5 Implement create production endpoint (POST /production/create)
+- [x] 10.6 Implement list production endpoint (GET /production/all)
+- [x] 10.7 Update main product stock (increase)
+- [x] 10.8 Update component product stock (decrease)
+- [x] 10.9 Update stock reports on production
 
 ---
 
 ## 11. Expense Management
 
-- [ ] 11.1 Create ExpenseEntity with all fields (finalize existing)
-- [ ] 11.2 Create PendingExpenseEntity
-- [ ] 11.3 Create CreateExpenseDto with validation
-- [ ] 11.4 Create ApproveExpenseDto
-- [ ] 11.5 Create GetAllExpenseDto (filters: date range, type)
-- [ ] 11.6 Implement submit expense endpoint (POST /expense/create)
-- [ ] 11.7 Implement approve expense endpoint (POST /expense/approve/:id) - Admin
-- [ ] 11.8 Implement reject expense endpoint (DELETE /expense/reject/:id) - Admin
-- [ ] 11.9 Implement list expenses endpoint (GET /expense/all)
-- [ ] 11.10 Implement approval workflow (pending for non-admin, direct for admin)
-- [ ] 11.11 Update user balance on expense approval
-- [ ] 11.12 Update cash reports on expense approval
+- [x] 11.1 Create ExpenseEntity with all fields (finalize existing)
+- [x] 11.2 Create PendingExpenseEntity
+- [x] 11.3 Create CreateExpenseDto with validation
+- [x] 11.4 Create ApproveExpenseDto
+- [x] 11.5 Create GetAllExpenseDto (filters: date range, type)
+- [x] 11.6 Implement submit expense endpoint (POST /expense/create)
+- [x] 11.7 Implement approve expense endpoint (POST /expense/approve/:id) - Admin
+- [x] 11.8 Implement reject expense endpoint (DELETE /expense/reject/:id) - Admin
+- [x] 11.9 Implement list expenses endpoint (GET /expense/all)
+- [x] 11.10 Implement approval workflow (pending for non-admin, direct for admin)
+- [x] 11.11 Update user balance on expense approval
+- [x] 11.12 Update cash reports on expense approval
 
 ### 11A. Expense Categories (Admin)
 

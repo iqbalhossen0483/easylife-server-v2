@@ -1,7 +1,161 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import {
+  ExpenseCategoryEntity,
+  ExpenseEntity,
+  ExpenseStatus,
+} from 'src/entites/expense.entity';
+import { Designation, UserEntity } from 'src/entites/user.entity';
+import { API_Meta } from 'src/types/common';
+import { Between, FindOptionsWhere } from 'typeorm';
+import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
 
 @Injectable()
 export class ExpenseService {
-  constructor(private readonly tenantDatabaseService: TenantDatabaseService) {}
+  constructor(private readonly tenantDbService: TenantDatabaseService) {}
+
+  async submitExpense(payload: CreateExpenseDto) {
+    const currentUserId = this.tenantDbService.getCurrentUserId();
+
+    const userRepo = await this.tenantDbService.getRepository(UserEntity);
+    const categoryRepo = await this.tenantDbService.getRepository(ExpenseCategoryEntity);
+    const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+
+    const currentUser = await userRepo.findOne({ where: { id: currentUserId } });
+    if (!currentUser) throw new NotFoundException('User not found');
+
+    const category = await categoryRepo.findOne({ where: { id: payload.type_id } });
+    if (!category) throw new NotFoundException('Expense category not found');
+
+    // Admin: direct approval. Non-admin: pending
+    const isAdmin = currentUser.designation === Designation.ADMIN;
+
+    const expense = expenseRepo.create({
+      type: category,
+      amount: payload.amount,
+      note: payload.note,
+      created_by: currentUser,
+      status: isAdmin ? ExpenseStatus.APPROVED : ExpenseStatus.PENDING,
+      approved_by: isAdmin ? currentUser : undefined,
+      approved_at: isAdmin ? new Date() : undefined,
+    });
+
+    await expenseRepo.save(expense);
+
+    // If admin, immediately update user balance
+    if (isAdmin) {
+      await userRepo.decrement({ id: currentUser.id }, 'have_money', payload.amount);
+    }
+
+    // TODO: Update cash reports
+
+    return {
+      success: true,
+      message: isAdmin
+        ? 'Expense approved and recorded'
+        : 'Expense submitted for approval',
+      data: expense,
+    };
+  }
+
+  async approveExpense(expenseId: number) {
+    const currentUserId = this.tenantDbService.getCurrentUserId();
+    const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+    const userRepo = await this.tenantDbService.getRepository(UserEntity);
+
+    const expense = await expenseRepo.findOne({
+      where: { id: expenseId },
+      relations: { created_by: true },
+    });
+    if (!expense) throw new NotFoundException('Expense not found');
+
+    if (expense.status !== ExpenseStatus.PENDING) {
+      throw new BadRequestException('Expense is not pending');
+    }
+
+    const approver = await userRepo.findOne({ where: { id: currentUserId } });
+
+    expense.status = ExpenseStatus.APPROVED;
+    expense.approved_by = approver;
+    expense.approved_at = new Date();
+    await expenseRepo.save(expense);
+
+    // Update expense creator's balance
+    await userRepo.decrement({ id: expense.created_by.id }, 'have_money', expense.amount);
+
+    // TODO: Update cash reports
+
+    return {
+      success: true,
+      message: 'Expense approved successfully',
+    };
+  }
+
+  async rejectExpense(expenseId: number) {
+    const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+
+    const expense = await expenseRepo.findOne({ where: { id: expenseId } });
+    if (!expense) throw new NotFoundException('Expense not found');
+
+    if (expense.status !== ExpenseStatus.PENDING) {
+      throw new BadRequestException('Expense is not pending');
+    }
+
+    await expenseRepo.softDelete({ id: expenseId });
+
+    return {
+      success: true,
+      message: 'Expense rejected successfully',
+    };
+  }
+
+  async getAllExpenses({
+    page = 1,
+    limit = 10,
+    status,
+    type_id,
+    start_date,
+    end_date,
+  }: GetAllExpenseDto) {
+    const skip = (page - 1) * limit;
+    const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+
+    const query: FindOptionsWhere<ExpenseEntity> = {};
+    if (status) query.status = status;
+    if (type_id) query.type = { id: type_id };
+    if (start_date && end_date) {
+      query.created_at = Between(new Date(start_date), new Date(end_date + 'T23:59:59'));
+    }
+
+    const [expenses, total] = await expenseRepo.findAndCount({
+      where: query,
+      relations: { type: true, created_by: true, approved_by: true },
+      select: {
+        type: { id: true, name: true },
+        created_by: { id: true, name: true },
+        approved_by: { id: true, name: true },
+      },
+      order: { created_at: 'DESC' },
+      take: limit,
+      skip,
+    });
+
+    const meta: API_Meta = {
+      total,
+      limit,
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+    };
+
+    return {
+      success: true,
+      message: 'Expenses fetched successfully',
+      data: expenses,
+      meta,
+    };
+  }
 }
