@@ -16,6 +16,10 @@ import { CollectionEntity, OrderEntity, OrderProductEntity } from 'src/entites/o
 import { ProductEntity } from 'src/entites/product.entity';
 import { ProductionEntity, ProductionProductEntity } from 'src/entites/production.entity';
 import { PurchaseCollectionEntity, PurchaseEntity, PurchaseProductEntity } from 'src/entites/purchase.entity';
+import {
+  DailyCashReportEntity, MonthlyCashReportEntity, YearlyCashReportEntity,
+  DailyStockReportEntity, MonthlyStockReportEntity, YearlyStockReportEntity,
+} from 'src/entites/report.entity';
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { Target } from 'src/entites/target.entity';
 import { PendingBalanceTransferEntity, TransactionEntity } from 'src/entites/transaction.entity';
@@ -64,6 +68,8 @@ export class TenantDatabaseService {
             ProductionEntity, ProductionProductEntity,
             PendingCommissionEntity,
             TransactionEntity, PendingBalanceTransferEntity,
+            DailyCashReportEntity, MonthlyCashReportEntity, YearlyCashReportEntity,
+            DailyStockReportEntity, MonthlyStockReportEntity, YearlyStockReportEntity,
           ],
       synchronize: true,
     });

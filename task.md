@@ -1,6 +1,6 @@
 # EasyLife Server v2 - Task Breakdown
 
-## Progress: 143 / 155 tasks completed (92%)
+## Progress: 145 / 155 tasks completed (94%)
 
 ---
 
@@ -260,56 +260,56 @@
 
 ## 15. Dashboard & Reports
 
-- [ ] 15.1 Create DailyCashReportEntity
-- [ ] 15.2 Create MonthlyCashReportEntity
-- [ ] 15.3 Create YearlyCashReportEntity
-- [ ] 15.4 Create DailyStockReportEntity
-- [ ] 15.5 Create MonthlyStockReportEntity
-- [ ] 15.6 Create YearlyStockReportEntity
-- [ ] 15.7 Implement daily dashboard endpoint (GET /dashboard)
-- [ ] 15.8 Implement cash report endpoint (GET /report/cash?method=date|month|year)
-- [ ] 15.9 Implement stock report endpoint (GET /report/stock?method=date|month|year)
-- [ ] 15.10 Implement chart data endpoint (GET /dashboard/chart)
-- [ ] 15.11 Implement pie chart data endpoint (GET /dashboard/piechart)
-- [ ] 15.12 Implement product chart data endpoint (GET /dashboard/product-chart)
-- [ ] 15.13 Implement undelivered orders notification endpoint
-- [ ] 15.14 Implement transaction history endpoint (GET /dashboard/transactions)
+- [x] 15.1 Create DailyCashReportEntity
+- [x] 15.2 Create MonthlyCashReportEntity
+- [x] 15.3 Create YearlyCashReportEntity
+- [x] 15.4 Create DailyStockReportEntity
+- [x] 15.5 Create MonthlyStockReportEntity
+- [x] 15.6 Create YearlyStockReportEntity
+- [x] 15.7 Implement daily dashboard endpoint (GET /dashboard)
+- [x] 15.8 Implement cash report endpoint (GET /report/cash?method=date|month|year)
+- [x] 15.9 Implement stock report endpoint (GET /report/stock?method=date|month|year)
+- [x] 15.10 Implement chart data endpoint (GET /dashboard/chart)
+- [x] 15.11 Implement pie chart data endpoint (GET /dashboard/piechart)
+- [x] 15.12 Implement product chart data endpoint (GET /dashboard/product-chart)
+- [x] 15.13 Implement undelivered orders notification endpoint
+- [x] 15.14 Implement transaction history endpoint (GET /dashboard/transactions)
 
 ---
 
 ## 16. Push Notifications
 
-- [ ] 16.1 Create NotificationModule
-- [ ] 16.2 Create SendNotificationDto
-- [ ] 16.3 Implement send notification endpoint (POST /notification/send)
-- [ ] 16.4 Implement target by role filtering
-- [ ] 16.5 Implement batch sending with chunking
-- [ ] 16.6 Add push token management on user entity
+- [x] 16.1 Create NotificationModule
+- [x] 16.2 Create SendNotificationDto
+- [x] 16.3 Implement send notification endpoint (POST /notification/send)
+- [x] 16.4 Implement target by role filtering
+- [x] 16.5 Implement batch sending with chunking
+- [x] 16.6 Add push token management on user entity
 
 ---
 
 ## 17. File Upload System
 
-- [ ] 17.1 Create FileUploadModule with multer config
-- [ ] 17.2 Configure file type validation (JPG, JPEG, PNG)
-- [ ] 17.3 Implement single file upload interceptor (profiles)
-- [ ] 17.4 Implement multiple file upload interceptor (documents)
-- [ ] 17.5 Implement old file deletion on update
-- [ ] 17.6 Serve static files from public directory
+- [x] 17.1 Create FileUploadModule with multer config
+- [x] 17.2 Configure file type validation (JPG, JPEG, PNG)
+- [x] 17.3 Implement single file upload interceptor (profiles)
+- [x] 17.4 Implement multiple file upload interceptor (documents)
+- [x] 17.5 Implement old file deletion on update
+- [x] 17.6 Serve static files from public directory
 
 ---
 
 ## 18. Scheduled Tasks (Cron Jobs)
 
-- [ ] 18.1 Install and configure @nestjs/schedule
-- [ ] 18.2 Implement daily cash report creation (midnight cron)
-- [ ] 18.3 Implement commission processing (expired target check)
-- [ ] 18.4 Implement Redis distributed locking for cron jobs
-- [ ] 18.5 Implement report validation service (daily cash)
-- [ ] 18.6 Implement report validation service (monthly cash)
-- [ ] 18.7 Implement report validation service (yearly cash)
-- [ ] 18.8 Implement duplicate entry detection and merge
-- [ ] 18.9 Implement SSE stream endpoint for report validation (GET /validate-report)
+- [x] 18.1 Install and configure @nestjs/schedule
+- [x] 18.2 Implement daily cash report creation (midnight cron)
+- [x] 18.3 Implement commission processing (expired target check)
+- [x] 18.4 Implement Redis distributed locking for cron jobs
+- [x] 18.5 Implement report validation service (daily cash)
+- [x] 18.6 Implement report validation service (monthly cash)
+- [x] 18.7 Implement report validation service (yearly cash)
+- [x] 18.8 Implement duplicate entry detection and merge
+- [x] 18.9 Implement SSE stream endpoint for report validation (GET /validate-report)
 
 ---
 
@@ -318,7 +318,7 @@
 - [x] 19.1 Set up Winston logger with log levels
 - [x] 19.2 Configure Swagger/OpenAPI with decorators
 - [x] 19.3 Configure ThrottlerModule for rate limiting
-- [ ] 19.4 Add health check endpoint
+- [x] 19.4 Add health check endpoint
 - [ ] 19.5 Write unit tests for AuthService
 - [ ] 19.6 Write unit tests for UserService
 - [ ] 19.7 Write unit tests for OrderService

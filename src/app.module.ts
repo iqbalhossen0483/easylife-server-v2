@@ -24,7 +24,9 @@ import { ExpenseModule } from './modules/common/expense/expense.module';
 import { NoteModule } from './modules/common/notes/notes.module';
 import { OrderModule } from './modules/common/order/order.module';
 import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
+import { NotificationModule } from './modules/common/notification/notification.module';
 import { TransactionModule } from './modules/common/transaction/transaction.module';
+import { ScheduledTasksModule } from './modules/scheduled/scheduled-tasks.module';
 
 @Module({
   imports: [
@@ -49,7 +51,9 @@ import { TransactionModule } from './modules/common/transaction/transaction.modu
     ExpenseModule,
     NoteModule,
     ReportModule,
+    NotificationModule,
     TransactionModule,
+    ScheduledTasksModule,
   ],
   providers: [
     {
