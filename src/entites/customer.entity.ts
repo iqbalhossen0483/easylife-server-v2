@@ -40,7 +40,7 @@ export class CustomerEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   profile: string;
 
-  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 100 })
   commission: number;
 
   // Financial fields

@@ -39,11 +39,11 @@ export class CreateCustomerDto {
   })
   machine_model?: string;
 
-  @ApiPropertyOptional({ example: 5.0 })
+  @ApiPropertyOptional({ example: 60, description: 'Commission % (1-100). Determines how much of total_sale counts toward sales targets.' })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Commission must be a number' })
-  @Min(0, { message: 'Commission must be at least 0' })
+  @Min(1, { message: 'Commission must be at least 1' })
   @Max(100, { message: 'Commission must be at most 100' })
   commission?: number;
 
@@ -85,7 +85,7 @@ export class UpdateCustomerDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Commission must be a number' })
-  @Min(0, { message: 'Commission must be at least 0' })
+  @Min(1, { message: 'Commission must be at least 1' })
   @Max(100, { message: 'Commission must be at most 100' })
   commission?: number;
 

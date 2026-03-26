@@ -605,10 +605,18 @@ export class OrderService {
   ) {
     const targetRepo = manager.getRepository(Target);
     const totalSale = Number(order.total_sale);
+
+    // Apply customer commission percentage to determine achievable amount
+    // e.g. commission=60 means 60% of total_sale counts toward target
+    const customerCommission = Number(order.shop?.commission ?? 100);
+    const achievableAmount = Math.round((totalSale * customerCommission) / 100);
+
+    if (achievableAmount <= 0) return;
+
     const isSameUser = order.created_by?.id === order.delivered_by?.id;
 
     if (isSameUser) {
-      // Same user created and delivered — full 100%
+      // Same user created and delivered — full achievable amount
       if (order.delivered_by) {
         const target = await targetRepo.findOne({
           where: {
@@ -617,12 +625,12 @@ export class OrderService {
           },
         });
         if (target) {
-          target.achived_amnt = Number(target.achived_amnt) + totalSale;
+          target.achived_amnt = Number(target.achived_amnt) + achievableAmount;
           await targetRepo.save(target);
         }
       }
     } else {
-      const halfSale = Math.round(totalSale / 2);
+      const halfAmount = Math.round(achievableAmount / 2);
 
       // 50% to delivery user
       if (order.delivered_by) {
@@ -634,7 +642,7 @@ export class OrderService {
         });
         if (deliveryTarget) {
           deliveryTarget.achived_amnt =
-            Number(deliveryTarget.achived_amnt) + halfSale;
+            Number(deliveryTarget.achived_amnt) + halfAmount;
           await targetRepo.save(deliveryTarget);
         }
       }
@@ -649,7 +657,8 @@ export class OrderService {
         });
         if (creatorTarget) {
           creatorTarget.achived_amnt =
-            Number(creatorTarget.achived_amnt) + (totalSale - halfSale);
+            Number(creatorTarget.achived_amnt) +
+            (achievableAmount - halfAmount);
           await targetRepo.save(creatorTarget);
         }
       }
