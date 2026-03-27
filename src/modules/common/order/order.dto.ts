@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNotEmpty,
   IsNumber,
@@ -29,6 +30,11 @@ export class OrderProductItemDto {
   @Min(1, { message: 'Quantity must be at least 1' })
   qty: number;
 
+  @ApiProperty({ example: false })
+  @IsOptional()
+  @IsBoolean({ message: 'Is free must be a boolean' })
+  is_free: boolean;
+
   @ApiProperty({ example: 500 })
   @IsNotEmpty({ message: 'Price is required' })
   @Type(() => Number)
@@ -48,15 +54,6 @@ export class CreateOrderDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Shop id must be a number' })
   shop_id: number;
-
-  @ApiProperty({ example: 1 })
-  @IsNotEmpty({ message: 'Delivered by user id is required' })
-  @Type(() => Number)
-  @IsNumber(
-    { maxDecimalPlaces: 0 },
-    { message: 'Delivered by must be a number' },
-  )
-  delivered_by: number;
 
   @ApiProperty({ type: [OrderProductItemDto] })
   @IsArray({ message: 'Products must be an array' })

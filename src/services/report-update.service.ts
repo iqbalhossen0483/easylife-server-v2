@@ -42,9 +42,11 @@ export class ReportUpdateService {
 
     if (!daily) {
       // Fetch last row to get closing as opening
-      const lastDaily = await dailyRepo.findOne({
+      const dailyReport = await dailyRepo.find({
         order: { date: 'DESC' },
+        take: 1,
       });
+      const lastDaily = dailyReport[0];
       const opening = lastDaily ? Number(lastDaily.closing) : 0;
 
       daily = dailyRepo.create({
@@ -70,9 +72,11 @@ export class ReportUpdateService {
     let monthly = await monthlyRepo.findOne({ where: { month, year } });
 
     if (!monthly) {
-      const lastMonthly = await monthlyRepo.findOne({
+      const monthlyReport = await monthlyRepo.find({
         order: { year: 'DESC', month: 'DESC' },
+        take: 1,
       });
+      const lastMonthly = monthlyReport[0];
       const opening = lastMonthly ? Number(lastMonthly.closing) : 0;
 
       monthly = monthlyRepo.create({ month, year, opening, closing: opening });
@@ -94,9 +98,11 @@ export class ReportUpdateService {
     let yearly = await yearlyRepo.findOne({ where: { year } });
 
     if (!yearly) {
-      const lastYearly = await yearlyRepo.findOne({
+      const yearlyReport = await yearlyRepo.find({
         order: { year: 'DESC' },
+        take: 1,
       });
+      const lastYearly = yearlyReport[0];
       const opening = lastYearly ? Number(lastYearly.closing) : 0;
 
       yearly = yearlyRepo.create({ year, opening, closing: opening });

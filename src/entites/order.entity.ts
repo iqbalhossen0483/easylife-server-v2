@@ -13,6 +13,7 @@ import { CustomerEntity } from './customer.entity';
 import { UserEntity } from './user.entity';
 
 export enum OrderStatus {
+  PENDING = 'pending',
   UNDELIVERED = 'undelivered',
   DELIVERED = 'delivered',
 }
@@ -100,6 +101,9 @@ export class OrderProductEntity {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   total: number;
+
+  @Column({ name: 'is_free', type: 'boolean', default: false })
+  is_free: boolean;
 }
 
 @Entity('collections')

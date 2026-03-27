@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { ProductEntity } from 'src/entites/product.entity';
-import { ReportUpdateService } from 'src/services/report-update.service';
 import {
   PurchaseCollectionEntity,
   PurchaseEntity,
@@ -13,6 +12,7 @@ import {
 } from 'src/entites/purchase.entity';
 import { SupplierEntity } from 'src/entites/supplier.entity';
 import { UserEntity } from 'src/entites/user.entity';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import { API_Meta } from 'src/types/common';
 import { clampLimit } from 'src/utils/file.util';
 import { FindOptionsWhere } from 'typeorm';
@@ -44,6 +44,50 @@ export class PurchaseService {
 
     const paymentAmount = payload.payment ?? 0;
     const dueAmount = payload.total_amount - paymentAmount;
+
+    // validate user have enough balance
+    const userRepo = await this.tenantDbService.getRepository(UserEntity);
+    const user = await userRepo.findOne({
+      where: { id: currentUserId },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.have_money < paymentAmount)
+      throw new BadRequestException('You have insufficient balance');
+
+    // validate payment amount
+    if (paymentAmount > payload.total_amount) {
+      throw new BadRequestException(
+        'Payment amount cannot be greater than total amount',
+      );
+    }
+
+    // validate product listed in our database
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
+    for (const p of payload.products) {
+      const product = await productRepo.findOne({
+        where: { id: p.product_id },
+      });
+      if (!product) throw new NotFoundException('Product not found');
+    }
+
+    // validate product price * qty = total
+    for (const p of payload.products) {
+      if (p.price * p.qty !== p.total)
+        throw new BadRequestException(
+          'Product price * qty does not match total',
+        );
+    }
+
+    // validate total product price matches total amount
+    const calculatedTotal = payload.products.reduce(
+      (sum, p) => sum + Number(p.total),
+      0,
+    );
+    if (Math.abs(calculatedTotal - payload.total_amount) > 0.01) {
+      throw new BadRequestException(
+        `Products total (${calculatedTotal}) does not match total amount (${payload.total_amount})`,
+      );
+    }
 
     const purchaseProducts = payload.products.map((p) => {
       const pp = new PurchaseProductEntity();
@@ -87,7 +131,7 @@ export class PurchaseService {
         'give_amount',
         paymentAmount,
       );
-      await supRepo.increment({ id: supplier.id }, 'debt_amount', dueAmount);
+      await supRepo.increment({ id: supplier.id }, 'due_amount', dueAmount);
 
       // Update product stock
       for (const item of payload.products) {
@@ -148,6 +192,7 @@ export class PurchaseService {
       };
     } catch (err) {
       await qr.rollbackTransaction();
+      console.log(err);
       throw err;
     } finally {
       await qr.release();
@@ -240,7 +285,7 @@ export class PurchaseService {
       );
       await supRepo.decrement(
         { id: purchase.supplier.id },
-        'debt_amount',
+        'due_amount',
         payload.amount,
       );
 

@@ -40,20 +40,25 @@ export class OrderService {
 
   async createOrder(payload: CreateOrderDto, currentUserId: number) {
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
     const customerRepo =
       await this.tenantDbService.getRepository(CustomerEntity);
+    console.log(payload);
 
     const customer = await customerRepo.findOne({
       where: { id: payload.shop_id },
     });
     if (!customer) throw new NotFoundException('Customer not found');
 
-    const deliveredByUser = await userRepo.findOne({
-      where: { id: payload.delivered_by },
-    });
-    if (!deliveredByUser)
-      throw new NotFoundException('Delivery user not found');
+    // Validate products stock;
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
+    for (const p of payload.products) {
+      const product = await productRepo.findOne({
+        where: { id: p.product_id },
+      });
+      if (!product) throw new NotFoundException('Product not found');
+      if (product.stock < p.qty)
+        throw new BadRequestException('Product has insufficient stock');
+    }
 
     // Validate products total matches total_sale
     const calculatedTotal = payload.products.reduce(
@@ -95,7 +100,6 @@ export class OrderService {
     const order = orderRepo.create({
       shop: customer,
       created_by: { id: currentUserId } as UserEntity,
-      delivered_by: deliveredByUser,
       total_sale: payload.total_sale,
       payment: payload.payment ?? 0,
       due: payload.due ?? payload.total_sale - (payload.payment ?? 0),

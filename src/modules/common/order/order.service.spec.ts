@@ -1,12 +1,16 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { ReportUpdateService } from 'src/services/report-update.service';
 import { OrderService } from './order.service';
 
 const mockRepo = {
   find: jest.fn(),
   findOne: jest.fn(),
   findAndCount: jest.fn(),
-  create: jest.fn().mockImplementation((d) => ({ id: 1, ...d })),
-  save: jest.fn().mockImplementation((d) => d),
+  create: jest
+    .fn()
+    .mockImplementation((d: Record<string, unknown>) => ({ id: 1, ...d })),
+  save: jest.fn().mockImplementation((d: Record<string, unknown>) => d),
   update: jest.fn(),
   softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
   delete: jest.fn(),
@@ -38,10 +42,16 @@ describe('OrderService', () => {
   let service: OrderService;
 
   beforeEach(() => {
-    service = new OrderService(mockTenantDb as any, mockReportService as any);
+    service = new OrderService(
+      mockTenantDb as unknown as TenantDatabaseService,
+      mockReportService as unknown as ReportUpdateService,
+    );
     jest.clearAllMocks();
-    mockRepo.create.mockImplementation((d) => ({ id: 1, ...d }));
-    mockRepo.save.mockImplementation((d) => d);
+    mockRepo.create.mockImplementation((d: Record<string, unknown>) => ({
+      id: 1,
+      ...d,
+    }));
+    mockRepo.save.mockImplementation((d: Record<string, unknown>) => d);
   });
 
   describe('createOrder', () => {
@@ -49,7 +59,14 @@ describe('OrderService', () => {
       shop_id: 1,
       delivered_by: 2,
       products: [
-        { product_id: 1, product_name: 'Coffee', qty: 5, price: 100, total: 500 },
+        {
+          product_id: 1,
+          product_name: 'Coffee',
+          qty: 5,
+          price: 100,
+          total: 500,
+          is_free: false,
+        },
       ],
       total_sale: 500,
       payment: 200,
@@ -58,7 +75,8 @@ describe('OrderService', () => {
     it('should create order successfully', async () => {
       mockRepo.findOne
         .mockResolvedValueOnce({ id: 1, shop_name: 'Shop' }) // customer
-        .mockResolvedValueOnce({ id: 2, name: 'Delivery Guy' }); // delivery user
+        .mockResolvedValueOnce({ id: 2, name: 'Delivery Guy' }) // delivery user
+        .mockResolvedValueOnce({ id: 1, name: 'Coffee', stock: 100 }); // product validation
 
       const result = await service.createOrder(validPayload, 1);
       expect(result.success).toBe(true);
@@ -68,38 +86,80 @@ describe('OrderService', () => {
     it('should throw if customer not found', async () => {
       mockRepo.findOne.mockResolvedValueOnce(null);
 
-      await expect(service.createOrder(validPayload, 1)).rejects.toThrow(NotFoundException);
+      await expect(service.createOrder(validPayload, 1)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw if product does not exist', async () => {
+      mockRepo.findOne
+        .mockResolvedValueOnce({ id: 1 }) // customer
+        .mockResolvedValueOnce({ id: 2 }) // delivery user
+        .mockResolvedValueOnce(null); // product not found
+
+      await expect(service.createOrder(validPayload, 1)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw if product has insufficient stock', async () => {
+      mockRepo.findOne
+        .mockResolvedValueOnce({ id: 1 }) // customer
+        .mockResolvedValueOnce({ id: 2 }) // delivery user
+        .mockResolvedValueOnce({ id: 1, name: 'Coffee', stock: 2 }); // only 2 in stock, need 5
+
+      await expect(service.createOrder(validPayload, 1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw if products total does not match total_sale', async () => {
       mockRepo.findOne
-        .mockResolvedValueOnce({ id: 1 })
-        .mockResolvedValueOnce({ id: 2 });
+        .mockResolvedValueOnce({ id: 1 }) // customer
+        .mockResolvedValueOnce({ id: 2 }) // delivery user
+        .mockResolvedValueOnce({ id: 1, name: 'Coffee', stock: 100 }); // product valid
 
       const badPayload = { ...validPayload, total_sale: 999 };
-      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(BadRequestException);
+      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw if payment exceeds total_sale', async () => {
       mockRepo.findOne
         .mockResolvedValueOnce({ id: 1 })
-        .mockResolvedValueOnce({ id: 2 });
+        .mockResolvedValueOnce({ id: 2 })
+        .mockResolvedValueOnce({ id: 1, name: 'Coffee', stock: 100 });
 
       const badPayload = { ...validPayload, payment: 9999 };
-      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(BadRequestException);
+      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw if product qty*price does not match total', async () => {
       mockRepo.findOne
         .mockResolvedValueOnce({ id: 1 })
-        .mockResolvedValueOnce({ id: 2 });
+        .mockResolvedValueOnce({ id: 2 })
+        .mockResolvedValueOnce({ id: 1, name: 'X', stock: 100 });
 
       const badPayload = {
         ...validPayload,
-        products: [{ product_id: 1, product_name: 'X', qty: 5, price: 100, total: 999 }],
+        products: [
+          {
+            product_id: 1,
+            product_name: 'X',
+            qty: 5,
+            price: 100,
+            total: 999,
+            is_free: false,
+          },
+        ],
         total_sale: 999,
       };
-      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(BadRequestException);
+      await expect(service.createOrder(badPayload, 1)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -129,14 +189,18 @@ describe('OrderService', () => {
     it('should throw if already delivered', async () => {
       mockRepo.findOne.mockResolvedValue({ ...mockOrder, status: 'delivered' });
 
-      await expect(service.deliverOrder(1)).rejects.toThrow(BadRequestException);
+      await expect(service.deliverOrder(1)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(mockQr.rollbackTransaction).toHaveBeenCalled();
     });
 
     it('should throw if order not found', async () => {
       mockRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.deliverOrder(999)).rejects.toThrow(NotFoundException);
+      await expect(service.deliverOrder(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

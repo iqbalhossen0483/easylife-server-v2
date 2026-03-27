@@ -44,13 +44,13 @@ export class SupplierEntity {
   give_amount: number;
 
   @Column({
-    name: 'debt_amount',
+    name: 'due_amount',
     type: 'decimal',
     precision: 12,
     scale: 2,
     default: 0,
   })
-  debt_amount: number;
+  due_amount: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   discount: number;

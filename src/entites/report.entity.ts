@@ -121,6 +121,24 @@ export class MonthlyCashReportEntity {
     default: 0,
   })
   market_due: number;
+
+  @Column({
+    name: 'cash_in',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  cash_in: number;
+
+  @Column({
+    name: 'cash_out',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  cash_out: number;
 }
 
 @Entity('yearly_cash_report')
@@ -172,6 +190,24 @@ export class YearlyCashReportEntity {
     default: 0,
   })
   market_due: number;
+
+  @Column({
+    name: 'cash_in',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  cash_in: number;
+
+  @Column({
+    name: 'cash_out',
+    type: 'decimal',
+    precision: 12,
+    scale: 2,
+    default: 0,
+  })
+  cash_out: number;
 }
 
 @Entity('daily_stock_report')

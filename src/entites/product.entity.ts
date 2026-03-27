@@ -7,6 +7,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+export enum ProductType {
+  RAW_MATERIAL = 'raw_material',
+  MAIN_PRODUCT = 'main_product',
+  EXTARNAL_PRODUCT = 'external_product',
+}
+
 @Entity('products')
 export class ProductEntity {
   @PrimaryGeneratedColumn()
@@ -18,8 +24,8 @@ export class ProductEntity {
   @Column({ name: 'short_name', type: 'varchar', length: 50, nullable: true })
   short_name: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  type: string;
+  @Column({ type: 'varchar', length: 50, default: ProductType.MAIN_PRODUCT })
+  type: ProductType;
 
   @Column({ type: 'int', default: 0 })
   sl: number;
@@ -36,9 +42,6 @@ export class ProductEntity {
 
   @Column({ type: 'int', default: 0 })
   sold: number;
-
-  @Column({ type: 'int', default: 0 })
-  production: number;
 
   @CreateDateColumn({ name: 'created_at' })
   created_at: Date;

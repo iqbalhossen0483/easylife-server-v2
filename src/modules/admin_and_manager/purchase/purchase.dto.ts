@@ -71,6 +71,12 @@ export class CreatePurchaseDto {
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Payment must be a number' })
   payment?: number;
 
+  @ApiPropertyOptional({ example: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Discount must be a number' })
+  discount?: number;
+
   @ApiPropertyOptional({ example: 'Bank transfer' })
   @IsOptional()
   payment_info?: string;

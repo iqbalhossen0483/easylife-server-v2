@@ -1,6 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNotEmpty, IsNumber, IsOptional, Length } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Length,
+} from 'class-validator';
+import { ProductType } from 'src/entites/product.entity';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Arabica Coffee Beans' })
@@ -13,10 +20,10 @@ export class CreateProductDto {
   @Length(1, 50, { message: 'Short name must be between 1 and 50 characters' })
   short_name?: string;
 
-  @ApiPropertyOptional({ example: 'Raw Material' })
+  @ApiPropertyOptional({ example: ProductType.MAIN_PRODUCT })
   @IsOptional()
-  @Length(2, 50, { message: 'Type must be between 2 and 50 characters' })
-  type?: string;
+  @IsEnum(ProductType, { message: 'Invalid product type' })
+  type?: ProductType;
 
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
@@ -39,10 +46,10 @@ export class UpdateProductDto {
   @Length(1, 50, { message: 'Short name must be between 1 and 50 characters' })
   short_name?: string;
 
-  @ApiPropertyOptional({ example: 'Finished Goods' })
+  @ApiPropertyOptional({ example: ProductType.MAIN_PRODUCT })
   @IsOptional()
-  @Length(2, 50, { message: 'Type must be between 2 and 50 characters' })
-  type?: string;
+  @IsEnum(ProductType, { message: 'Invalid product type' })
+  type?: ProductType;
 
   @ApiPropertyOptional({ example: 2 })
   @IsOptional()
