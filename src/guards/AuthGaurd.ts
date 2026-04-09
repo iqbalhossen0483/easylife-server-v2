@@ -25,6 +25,7 @@ export class AuthGaurd implements CanActivate {
       const user = await this.jwtService.verifyAsync<JWT_Payload>(token);
       request.user = user;
       request.tenantId = user.tenantId;
+      request.accessToken = token;
       return true;
     } catch (error) {
       throw new UnauthorizedException('Authentication failed');

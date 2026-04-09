@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import type { Response } from 'express';
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UserEntity } from 'src/entites/user.entity';
+import { RedisService } from 'src/services/redis.service';
 import { JWT_Payload } from 'src/types/common';
 import { FindOptionsWhere } from 'typeorm';
 import { LoginDto } from './auth.dto';
@@ -15,6 +16,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly tenantDatabaseService: TenantDatabaseService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {}
 
   generateToken(user: UserEntity, tenantId: number) {
@@ -23,6 +25,7 @@ export class AuthService {
       tenantId: tenantId,
       phone: user.phone,
       designation: user.designation,
+      jti: Date.now(),
     });
     return token;
   }
@@ -76,7 +79,16 @@ export class AuthService {
     };
   }
 
-  logout(res: Response) {
+  async logout(res: Response, token: string) {
+    const decode = this.jwtService.decode<JWT_Payload>(token);
+    if (decode.exp) {
+      const key = `blacklist:${decode.jti}`;
+      const now = Math.floor(Date.now() / 1000);
+      const remaingTime = decode.exp - now;
+      await this.redisService.set(key, '1', remaingTime);
+    }
+
+    // clear cookie
     res.clearCookie('token');
     return {
       success: true,
@@ -84,10 +96,21 @@ export class AuthService {
     };
   }
 
-  async getProfile(res: Response) {
+  async getProfile(res: Response, currentToken: string) {
     const database = await this.tenantDatabaseService.getDataDatabase();
     const tenantId = this.tenantDatabaseService.getTenantId();
     const currentUserId = this.tenantDatabaseService.getCurrentUserId();
+
+    // check if token is valid
+    const decode = this.jwtService.decode<JWT_Payload>(currentToken);
+    if (!decode || !decode.exp || decode.exp < Math.floor(Date.now() / 1000)) {
+      throw new UnauthorizedException('Authentication failed');
+    }
+    const key = `blacklist:${decode.jti}`;
+    const blacklist = await this.redisService.get(key);
+    if (blacklist) {
+      throw new UnauthorizedException('Authentication failed');
+    }
 
     const userRepo = await this.tenantDatabaseService.getRepository(UserEntity);
     const user = await userRepo.findOne({

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
+import { UserToken } from 'src/decorators/userToken';
 import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { LoginDto } from './auth.dto';
 import { AuthService } from './auth.service';
@@ -15,13 +16,19 @@ export class AuthController {
 
   @UseGuards(AuthGaurd)
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
-    return this.authService.logout(res);
+  logout(
+    @Res({ passthrough: true }) res: Response,
+    @UserToken() token: string,
+  ) {
+    return this.authService.logout(res, token);
   }
 
   @UseGuards(AuthGaurd)
   @Get('get-profile')
-  getProfile(@Res({ passthrough: true }) res: Response) {
-    return this.authService.getProfile(res);
+  getProfile(
+    @Res({ passthrough: true }) res: Response,
+    @UserToken() token: string,
+  ) {
+    return this.authService.getProfile(res, token);
   }
 }
