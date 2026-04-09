@@ -33,8 +33,14 @@ export class ProductEntity {
   @Column({ type: 'varchar', length: 100, nullable: true })
   profile: string;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  price: number;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  cost: number;
+
   // Inventory fields
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   stock: number;
 
   @Column({ type: 'int', default: 0 })

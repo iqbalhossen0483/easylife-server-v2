@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Length,
 } from 'class-validator';
 import { ProductType } from 'src/entites/product.entity';
@@ -25,6 +26,18 @@ export class CreateProductDto {
   @IsEnum(ProductType, { message: 'Invalid product type' })
   type?: ProductType;
 
+  @ApiProperty({ example: 100 })
+  @IsNotEmpty({ message: 'Price is required' })
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Price must be a number' })
+  price: number;
+
+  @ApiProperty({ example: 50 })
+  @IsNotEmpty({ message: 'Cost is required' })
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Cost must be a number' })
+  cost: number;
+
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
   @Type(() => Number)
@@ -38,11 +51,13 @@ export class CreateProductDto {
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Arabica Coffee Beans Premium' })
   @IsOptional()
+  @IsString()
   @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
   name?: string;
 
   @ApiPropertyOptional({ example: 'ACBP' })
   @IsOptional()
+  @IsString()
   @Length(1, 50, { message: 'Short name must be between 1 and 50 characters' })
   short_name?: string;
 
@@ -50,6 +65,18 @@ export class UpdateProductDto {
   @IsOptional()
   @IsEnum(ProductType, { message: 'Invalid product type' })
   type?: ProductType;
+
+  @ApiPropertyOptional({ example: 100 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Price must be a number' })
+  price?: number;
+
+  @ApiPropertyOptional({ example: 50 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Cost must be a number' })
+  cost?: number;
 
   @ApiPropertyOptional({ example: 2 })
   @IsOptional()

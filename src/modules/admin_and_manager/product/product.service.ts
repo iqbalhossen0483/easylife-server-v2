@@ -7,7 +7,7 @@ import {
 import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { ProductEntity } from 'src/entites/product.entity';
 import { API_Meta } from 'src/types/common';
-import { deleteFile, clampLimit } from 'src/utils/file.util';
+import { clampLimit, deleteFile } from 'src/utils/file.util';
 import { FindOptionsWhere, ILike } from 'typeorm';
 import {
   CreateProductDto,
@@ -69,7 +69,7 @@ export class ProductService {
 
     const [products, total] = await productRepo.findAndCount({
       where: query.length ? query : undefined,
-      order: { sl: 'ASC', created_at: 'DESC' },
+      order: { sl: 'ASC' },
       take: limit,
       skip,
     });
