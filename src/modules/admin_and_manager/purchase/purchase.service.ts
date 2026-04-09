@@ -51,6 +51,7 @@ export class PurchaseService {
       where: { id: currentUserId },
     });
     if (!user) throw new NotFoundException('User not found');
+
     if (user.have_money < paymentAmount)
       throw new BadRequestException('You have insufficient balance');
 
@@ -61,22 +62,32 @@ export class PurchaseService {
       );
     }
 
-    // validate product listed in our database
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
-    for (const p of payload.products) {
+
+    const purchaseProducts = payload.products.map(async (p) => {
+      // validate product listed in our database
       const product = await productRepo.findOne({
         where: { id: p.product_id },
       });
-      if (!product) throw new NotFoundException('Product not found');
-    }
+      if (!product) {
+        throw new NotFoundException(`Product with #${p.product_id} not found`);
+      }
 
-    // validate product price * qty = total
-    for (const p of payload.products) {
-      if (p.price * p.qty !== p.total)
+      // validate product price * qty = total
+      if (p.price * p.qty !== p.total) {
         throw new BadRequestException(
           'Product price * qty does not match total',
         );
-    }
+      }
+
+      const pp = new PurchaseProductEntity();
+      pp.product = product;
+      pp.qty = p.qty;
+      pp.price = p.price;
+      pp.total = p.total;
+      return pp;
+    });
+    const products = await Promise.all(purchaseProducts);
 
     // validate total product price matches total amount
     const calculatedTotal = payload.products.reduce(
@@ -88,16 +99,6 @@ export class PurchaseService {
         `Products total (${calculatedTotal}) does not match total amount (${payload.total_amount})`,
       );
     }
-
-    const purchaseProducts = payload.products.map((p) => {
-      const pp = new PurchaseProductEntity();
-      pp.product_id = p.product_id;
-      pp.product_name = p.product_name;
-      pp.qty = p.qty;
-      pp.price = p.price;
-      pp.total = p.total;
-      return pp;
-    });
 
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
@@ -115,7 +116,7 @@ export class PurchaseService {
         due: dueAmount,
         payment_info: payload.payment_info,
         files: fileNames.length > 0 ? fileNames : undefined,
-        products: purchaseProducts,
+        products: products,
       });
 
       await purchaseRepo.save(purchase);

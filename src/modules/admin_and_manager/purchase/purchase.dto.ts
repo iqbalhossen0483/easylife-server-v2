@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsNotEmpty,
@@ -15,10 +15,6 @@ export class PurchaseProductItemDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Product id must be a number' })
   product_id: number;
-
-  @ApiProperty({ example: 'Arabica Coffee Beans' })
-  @IsNotEmpty({ message: 'Product name is required' })
-  product_name: string;
 
   @ApiProperty({ example: 100 })
   @IsNotEmpty({ message: 'Quantity is required' })
@@ -53,6 +49,17 @@ export class CreatePurchaseDto {
   @ApiProperty({ type: [PurchaseProductItemDto] })
   @IsArray({ message: 'Products must be an array' })
   @ValidateNested({ each: true })
+  @Transform(({ value }: { value: string }) => {
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value) as PurchaseProductItemDto[];
+        return plainToInstance(PurchaseProductItemDto, parsed);
+      } catch (error) {
+        return plainToInstance(PurchaseProductItemDto, value);
+      }
+    }
+    return plainToInstance(PurchaseProductItemDto, value);
+  })
   @Type(() => PurchaseProductItemDto)
   products: PurchaseProductItemDto[];
 

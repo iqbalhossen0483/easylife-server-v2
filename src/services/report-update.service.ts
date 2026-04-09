@@ -157,13 +157,13 @@ export class ReportUpdateService {
     // --- Daily ---
     const dailyRepo = mgr.getRepository(DailyStockReportEntity);
     let daily = await dailyRepo.findOne({
-      where: { date: new Date(dateStr), product_id: productId },
+      where: { date: new Date(dateStr), product: { id: productId } },
     });
 
     if (!daily) {
       // Fetch last row for this product to get previous stock
       const lastDaily = await dailyRepo.findOne({
-        where: { product_id: productId },
+        where: { product: { id: productId } },
         order: { date: 'DESC' },
       });
       const previousStock = lastDaily
@@ -172,7 +172,7 @@ export class ReportUpdateService {
 
       daily = dailyRepo.create({
         date: new Date(dateStr),
-        product_id: productId,
+        product: { id: productId },
         previous_stock: previousStock,
         total_sold: 0,
         purchased: 0,
@@ -188,12 +188,12 @@ export class ReportUpdateService {
     // --- Monthly ---
     const monthlyRepo = mgr.getRepository(MonthlyStockReportEntity);
     let monthly = await monthlyRepo.findOne({
-      where: { month, year, product_id: productId },
+      where: { month, year, product: { id: productId } },
     });
 
     if (!monthly) {
       const lastMonthly = await monthlyRepo.findOne({
-        where: { product_id: productId },
+        where: { product: { id: productId } },
         order: { year: 'DESC', month: 'DESC' },
       });
       const previousStock = lastMonthly
@@ -203,7 +203,7 @@ export class ReportUpdateService {
       monthly = monthlyRepo.create({
         month,
         year,
-        product_id: productId,
+        product: { id: productId },
         previous_stock: previousStock,
         total_sold: 0,
         purchased: 0,
@@ -219,12 +219,12 @@ export class ReportUpdateService {
     // --- Yearly ---
     const yearlyRepo = mgr.getRepository(YearlyStockReportEntity);
     let yearly = await yearlyRepo.findOne({
-      where: { year, product_id: productId },
+      where: { year, product: { id: productId } },
     });
 
     if (!yearly) {
       const lastYearly = await yearlyRepo.findOne({
-        where: { product_id: productId },
+        where: { product: { id: productId } },
         order: { year: 'DESC' },
       });
       const previousStock = lastYearly
@@ -233,7 +233,7 @@ export class ReportUpdateService {
 
       yearly = yearlyRepo.create({
         year,
-        product_id: productId,
+        product: { id: productId },
         previous_stock: previousStock,
         total_sold: 0,
         purchased: 0,
