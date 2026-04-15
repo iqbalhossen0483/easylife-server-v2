@@ -160,13 +160,6 @@ export class PurchaseService {
         payload.total_amount,
         qr.manager,
       );
-      if (paymentAmount > 0) {
-        await this.reportService.updateCashReport(
-          'cash_out',
-          paymentAmount,
-          qr.manager,
-        );
-      }
 
       // Update stock reports per product
       for (const item of payload.products) {
