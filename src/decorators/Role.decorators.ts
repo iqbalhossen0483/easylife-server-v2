@@ -1,5 +1,5 @@
+import { Designation } from '@/entites/user.entity';
 import { SetMetadata } from '@nestjs/common';
-import { Designation } from 'src/entites/user.entity';
 
 export const Role_Key = 'roles';
 

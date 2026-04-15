@@ -1,6 +1,6 @@
+import { DbListEntity } from '@/entites/dbList.entity';
 import { Global, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DbListEntity } from 'src/entites/dbList.entity';
 import { TenantConnectionManager } from './tenant-connection.manager';
 import { TenantDatabaseService } from './tenant-datasource.manager';
 

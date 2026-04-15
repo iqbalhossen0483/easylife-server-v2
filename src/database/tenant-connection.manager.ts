@@ -1,27 +1,22 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { CustomerEntity } from 'src/entites/customer.entity';
-import {
-  ExpenseCategoryEntity,
-  ExpenseEntity,
-} from 'src/entites/expense.entity';
-import { NotesEntity } from 'src/entites/notes.entity';
+import { CustomerEntity } from '@/entites/customer.entity';
+import { ExpenseCategoryEntity, ExpenseEntity } from '@/entites/expense.entity';
+import { NotesEntity } from '@/entites/notes.entity';
 import {
   CollectionEntity,
   OrderEntity,
   OrderProductEntity,
-} from 'src/entites/order.entity';
-import { PendingCommissionEntity } from 'src/entites/pending_commission.entity';
-import { ProductEntity } from 'src/entites/product.entity';
+} from '@/entites/order.entity';
+import { PendingCommissionEntity } from '@/entites/pending_commission.entity';
+import { ProductEntity } from '@/entites/product.entity';
 import {
   ProductionEntity,
   ProductionProductEntity,
-} from 'src/entites/production.entity';
+} from '@/entites/production.entity';
 import {
   PurchaseCollectionEntity,
   PurchaseEntity,
   PurchaseProductEntity,
-} from 'src/entites/purchase.entity';
+} from '@/entites/purchase.entity';
 import {
   DailyCashReportEntity,
   DailyStockReportEntity,
@@ -29,14 +24,16 @@ import {
   MonthlyStockReportEntity,
   YearlyCashReportEntity,
   YearlyStockReportEntity,
-} from 'src/entites/report.entity';
-import { SupplierEntity } from 'src/entites/supplier.entity';
-import { Target } from 'src/entites/target.entity';
+} from '@/entites/report.entity';
+import { SupplierEntity } from '@/entites/supplier.entity';
+import { Target } from '@/entites/target.entity';
 import {
   PendingBalanceTransferEntity,
   TransactionEntity,
-} from 'src/entites/transaction.entity';
-import { UserEntity } from 'src/entites/user.entity';
+} from '@/entites/transaction.entity';
+import { UserEntity } from '@/entites/user.entity';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   DataSource,
   EntityTarget,

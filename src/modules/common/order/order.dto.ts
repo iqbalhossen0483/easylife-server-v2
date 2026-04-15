@@ -1,3 +1,4 @@
+import { OrderStatus } from '@/entites/order.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -10,7 +11,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { OrderStatus } from 'src/entites/order.entity';
 
 export class OrderProductItemDto {
   @ApiProperty({ example: 1 })

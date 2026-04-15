@@ -1,14 +1,13 @@
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
+import { Role } from '@/decorators/Role.decorators';
+import { Designation, UserEntity } from '@/entites/user.entity';
+import { AuthGaurd } from '@/guards/AuthGaurd';
+import { RoleGaurd } from '@/guards/RoleGaurd';
+import { NotificationService } from '@/services/notification.service';
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Role } from 'src/decorators/Role.decorators';
-import { Designation } from 'src/entites/user.entity';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
-import { RoleGaurd } from 'src/guards/RoleGaurd';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { UserEntity } from 'src/entites/user.entity';
-import { NotificationService } from 'src/services/notification.service';
+import { In, IsNull, Not } from 'typeorm';
 import { SendNotificationDto } from './notification.dto';
-import { In, Not, IsNull } from 'typeorm';
 
 @ApiTags('Notification')
 @UseGuards(AuthGaurd, RoleGaurd)

@@ -39,7 +39,11 @@ export class CreateCustomerDto {
   })
   machine_model?: string;
 
-  @ApiPropertyOptional({ example: 60, description: 'Commission % (1-100). Determines how much of total_sale counts toward sales targets.' })
+  @ApiPropertyOptional({
+    example: 60,
+    description:
+      'Commission % (1-100). Determines how much of total_sale counts toward sales targets.',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Commission must be a number' })

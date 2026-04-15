@@ -1,7 +1,7 @@
+import { TransferPurpose } from '@/entites/transaction.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
-import { TransferPurpose } from 'src/entites/transaction.entity';
 
 export class BalanceTransferDto {
   @ApiProperty({ example: 2 })

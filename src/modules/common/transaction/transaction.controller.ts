@@ -1,3 +1,7 @@
+import { CurrentUser } from '@/decorators/currentUser';
+import { AuthGaurd } from '@/guards/AuthGaurd';
+import { RoleGaurd } from '@/guards/RoleGaurd';
+import type { JWT_Payload } from '@/types/common';
 import {
   Body,
   Controller,
@@ -9,10 +13,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { CurrentUser } from 'src/decorators/currentUser';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
-import { RoleGaurd } from 'src/guards/RoleGaurd';
-import type { JWT_Payload } from 'src/types/common';
 import { BalanceTransferDto } from './transaction.dto';
 import { TransactionService } from './transaction.service';
 

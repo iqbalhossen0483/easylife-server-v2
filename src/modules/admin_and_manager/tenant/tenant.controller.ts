@@ -1,9 +1,9 @@
+import { Role } from '@/decorators/Role.decorators';
+import { Designation } from '@/entites/user.entity';
+import { AuthGaurd } from '@/guards/AuthGaurd';
+import { RoleGaurd } from '@/guards/RoleGaurd';
 import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { Role } from 'src/decorators/Role.decorators';
-import { Designation } from 'src/entites/user.entity';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
-import { RoleGaurd } from 'src/guards/RoleGaurd';
 import { UpdateTenantDto } from './tenant.dto';
 import { TenantService } from './tenant.service';
 

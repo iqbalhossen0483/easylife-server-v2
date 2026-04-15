@@ -1,21 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { CustomerEntity } from 'src/entites/customer.entity';
-import { ExpenseEntity, ExpenseStatus } from 'src/entites/expense.entity';
-import {
-  OrderEntity,
-  OrderProductEntity,
-  OrderStatus,
-} from 'src/entites/order.entity';
-import { ProductEntity } from 'src/entites/product.entity';
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
+import { CustomerEntity } from '@/entites/customer.entity';
+import { ExpenseEntity, ExpenseStatus } from '@/entites/expense.entity';
+import { OrderEntity, OrderStatus } from '@/entites/order.entity';
+import { ProductEntity } from '@/entites/product.entity';
 import {
   DailyCashReportEntity,
   DailyStockReportEntity,
   MonthlyCashReportEntity,
   YearlyCashReportEntity,
-} from 'src/entites/report.entity';
-import { TransactionEntity } from 'src/entites/transaction.entity';
-import { Designation, UserEntity } from 'src/entites/user.entity';
+} from '@/entites/report.entity';
+import { TransactionEntity } from '@/entites/transaction.entity';
+import { Designation, UserEntity } from '@/entites/user.entity';
+import { Injectable } from '@nestjs/common';
 import { Between } from 'typeorm';
 
 @Injectable()

@@ -1,3 +1,4 @@
+import { Designation } from '@/entites/user.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -7,7 +8,6 @@ import {
   IsOptional,
   Length,
 } from 'class-validator';
-import { Designation } from 'src/entites/user.entity';
 
 export class CreateUserDto {
   @ApiProperty({ example: 'John Doe' })

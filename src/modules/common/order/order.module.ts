@@ -1,5 +1,5 @@
+import { ReportUpdateService } from '@/services/report-update.service';
 import { Module } from '@nestjs/common';
-import { ReportUpdateService } from 'src/services/report-update.service';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
 

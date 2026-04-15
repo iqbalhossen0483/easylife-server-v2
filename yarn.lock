@@ -1341,6 +1341,11 @@
   resolved "https://registry.npmjs.org/@types/methods/-/methods-1.1.4.tgz"
   integrity sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==
 
+"@types/mocha@^10.0.10":
+  version "10.0.10"
+  resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-10.0.10.tgz#91f62905e8d23cbd66225312f239454a23bebfa0"
+  integrity sha512-xPyYSz1cMPnJQhl0CLMH68j3gprKZaTjG3s5Vi+fDgx+uhG9NOXwbVt52eFS8ECyXhyKcjDLCBEqBExKuiZb7Q==
+
 "@types/ms@*":
   version "2.1.0"
   resolved "https://registry.npmjs.org/@types/ms/-/ms-2.1.0.tgz"

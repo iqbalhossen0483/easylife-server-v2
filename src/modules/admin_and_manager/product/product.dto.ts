@@ -1,3 +1,4 @@
+import { ProductType } from '@/entites/product.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -8,7 +9,6 @@ import {
   IsString,
   Length,
 } from 'class-validator';
-import { ProductType } from 'src/entites/product.entity';
 
 export class CreateProductDto {
   @ApiProperty({ example: 'Arabica Coffee Beans' })

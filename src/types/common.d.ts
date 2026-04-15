@@ -1,6 +1,6 @@
+import { Designation } from '@/entites/user.entity';
 import 'express-serve-static-core';
 import { JwtPayload } from 'jsonwebtoken';
-import { Designation } from 'src/entites/user.entity';
 
 export interface JWT_Payload extends JwtPayload {
   tenantId: number;

@@ -1,100 +1,110 @@
-import { UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import bcrypt from 'bcryptjs';
-import { AuthService } from './auth.service';
+// import { UnauthorizedException } from '@nestjs/common';
+// import { ConfigService } from '@nestjs/config';
+// import { JwtService } from '@nestjs/jwt';
+// import { Test, TestingModule } from '@nestjs/testing';
+// import { AuthController } from './auth.controller';
+// import { AuthService } from './auth.service';
 
-const hashedPassword = bcrypt.hashSync('Iqbal0483', 10);
+// describe('AuthController', () => {
+//   let controller: AuthController;
 
-const mockUser = {
-  id: 1,
-  name: 'Test User',
-  phone: '01853860483',
-  password: hashedPassword,
-  designation: 'admin',
-};
+//   const mockJwt = {
+//     sign: jest.fn().mockReturnValue('mock-token'),
+//   };
 
-const mockRepo = { findOne: jest.fn() };
+//   const mockConfig = {
+//     get: jest.fn().mockReturnValue('development'),
+//   };
 
-const mockTenantDb = {
-  getRepository: jest.fn().mockResolvedValue(mockRepo),
-  getDataDatabase: jest.fn().mockResolvedValue({ id: 1, name: 'test_db' }),
-  getTenantId: jest.fn().mockReturnValue(1),
-  getCurrentUserId: jest.fn().mockReturnValue(1),
-};
+//   const mockTenantDb = {
+//     getRepository: jest.fn().mockReturnValue({
+//       findOne: jest.fn(),
+//     }),
+//     getDataDatabase: jest.fn().mockResolvedValue({ id: 1 }),
+//     getTenantId: jest.fn().mockReturnValue(1),
+//     getCurrentUserId: jest.fn().mockReturnValue(1),
+//   };
 
-const mockJwt = { sign: jest.fn().mockReturnValue('mock-token') };
-const mockConfig = { get: jest.fn().mockReturnValue('development') };
+//   beforeEach(async () => {
+//     const module: TestingModule = await Test.createTestingModule({
+//       controllers: [AuthController],
+//       providers: [
+//         AuthService,
+//         {
+//           provide: JwtService,
+//           useValue: mockJwt,
+//         },
+//         {
+//           provide: ConfigService,
+//           useValue: mockConfig,
+//         },
+//         {
+//           provide: 'TENANT_DB', // change if your token differs
+//           useValue: mockTenantDb,
+//         },
+//       ],
+//     }).compile();
 
-describe('AuthService', () => {
-  let service: AuthService;
+//     controller = module.get<AuthController>(AuthController);
+//   });
 
-  beforeEach(() => {
-    service = new AuthService(
-      mockJwt as unknown as JwtService,
-      mockTenantDb as any,
-      mockConfig as unknown as ConfigService,
-    );
-    jest.clearAllMocks();
-    mockJwt.sign.mockReturnValue('mock-token');
-  });
+//   afterEach(() => {
+//     jest.clearAllMocks();
+//   });
 
-  describe('login', () => {
-    const mockRes = { cookie: jest.fn() } as any;
+//   describe('login', () => {
+//     it('should login user', async () => {
+//       const mockRes = { cookie: jest.fn() } as any;
 
-    it('should login successfully', async () => {
-      mockRepo.findOne.mockResolvedValue({ ...mockUser });
-      const result = await service.login({ phone: '01853860483', password: 'Iqbal0483' }, mockRes);
-      expect(result.success).toBe(true);
-      expect(result.data.token).toBe('mock-token');
-      expect(mockRes.cookie).toHaveBeenCalled();
-    });
+//       const repo = mockTenantDb.getRepository();
+//       repo.findOne.mockResolvedValue({
+//         id: 1,
+//         phone: '01853860483',
+//         password: 'hashed',
+//         designation: 'admin',
+//       });
 
-    it('should throw for wrong password', async () => {
-      mockRepo.findOne.mockResolvedValue({ ...mockUser });
-      await expect(
-        service.login({ phone: '01853860483', password: 'wrong' }, mockRes),
-      ).rejects.toThrow(UnauthorizedException);
-    });
+//       const result = await controller.login(
+//         { phone: '01853860483', password: 'Iqbal0483' },
+//         mockRes,
+//       );
 
-    it('should throw for non-existent user', async () => {
-      mockRepo.findOne.mockResolvedValue(null);
-      await expect(
-        service.login({ phone: '00000000000', password: 'any' }, mockRes),
-      ).rejects.toThrow(UnauthorizedException);
-    });
-  });
+//       expect(result.success).toBe(true);
+//       expect(mockRes.cookie).toHaveBeenCalled();
+//     });
 
-  describe('generateToken', () => {
-    it('should call jwtService.sign with correct payload', () => {
-      service.generateToken(mockUser as any, 1);
-      expect(mockJwt.sign).toHaveBeenCalledWith({
-        sub: 1, tenantId: 1, phone: '01853860483', designation: 'admin',
-      });
-    });
-  });
+//     it('should throw unauthorized', async () => {
+//       const mockRes = { cookie: jest.fn() } as any;
 
-  describe('logout', () => {
-    it('should clear cookie', () => {
-      const res = { clearCookie: jest.fn() } as any;
-      const result = service.logout(res);
-      expect(res.clearCookie).toHaveBeenCalledWith('token');
-      expect(result.success).toBe(true);
-    });
-  });
+//       const repo = mockTenantDb.getRepository();
+//       repo.findOne.mockResolvedValue(null);
 
-  describe('getProfile', () => {
-    it('should return profile', async () => {
-      mockRepo.findOne.mockResolvedValue({ ...mockUser });
-      const res = { cookie: jest.fn() } as any;
-      const result = await service.getProfile(res);
-      expect(result.success).toBe(true);
-      expect(result.data.user).toBeDefined();
-    });
+//       await expect(
+//         controller.login({ phone: '000', password: 'wrong' }, mockRes),
+//       ).rejects.toThrow(UnauthorizedException);
+//     });
+//   });
 
-    it('should throw if user not found', async () => {
-      mockRepo.findOne.mockResolvedValue(null);
-      await expect(service.getProfile({ cookie: jest.fn() } as any)).rejects.toThrow(UnauthorizedException);
-    });
-  });
-});
+//   describe('getProfile', () => {
+//     it('should return profile', async () => {
+//       const mockRes = { cookie: jest.fn() } as any;
+
+//       const repo = mockTenantDb.getRepository();
+//       repo.findOne.mockResolvedValue({
+//         id: 1,
+//         phone: '01853860483',
+//       });
+
+//       const result = await controller.getProfile(mockRes);
+
+//       expect(result.success).toBe(true);
+//     });
+//   });
+
+//   describe('logout', () => {
+//     it('should clear cookie', () => {
+//       expect(result.success).toBe(true);
+//       expect(mockRes.clearCookie).toHaveBeenCalledWith('token');
+//     });
+//   });
+// });

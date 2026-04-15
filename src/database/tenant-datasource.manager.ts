@@ -1,3 +1,5 @@
+import { DbListEntity } from '@/entites/dbList.entity';
+import { JWT_Payload } from '@/types/common';
 import {
   Inject,
   Injectable,
@@ -6,8 +8,6 @@ import {
 } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DbListEntity } from 'src/entites/dbList.entity';
-import { JWT_Payload } from 'src/types/common';
 import { EntityTarget, ObjectLiteral, QueryRunner, Repository } from 'typeorm';
 import { TenantConnectionManager } from './tenant-connection.manager';
 

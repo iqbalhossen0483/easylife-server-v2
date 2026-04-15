@@ -1,5 +1,5 @@
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
 import { UpdateTenantDto } from './tenant.dto';
 
 @Injectable()

@@ -1,7 +1,7 @@
+import { UserToken } from '@/decorators/userToken';
+import { AuthGaurd } from '@/guards/AuthGaurd';
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
-import { UserToken } from 'src/decorators/userToken';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
 import { LoginDto } from './auth.dto';
 import { AuthService } from './auth.service';
 

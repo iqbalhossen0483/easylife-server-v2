@@ -1,3 +1,6 @@
+import { CurrentUser } from '@/decorators/currentUser';
+import { AuthGaurd } from '@/guards/AuthGaurd';
+import type { JWT_Payload } from '@/types/common';
 import {
   Body,
   Controller,
@@ -10,9 +13,6 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { CurrentUser } from 'src/decorators/currentUser';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
-import type { JWT_Payload } from 'src/types/common';
 import { NoteService } from './note.service';
 import { CreateNoteDto, GetQueryNoteDto } from './notes.dto';
 

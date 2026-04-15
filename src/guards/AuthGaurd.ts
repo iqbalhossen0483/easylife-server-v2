@@ -1,3 +1,4 @@
+import { JWT_Payload } from '@/types/common';
 import {
   CanActivate,
   ExecutionContext,
@@ -6,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { JWT_Payload } from 'src/types/common';
 
 @Injectable()
 export class AuthGaurd implements CanActivate {
@@ -28,6 +28,7 @@ export class AuthGaurd implements CanActivate {
       request.accessToken = token;
       return true;
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException('Authentication failed');
     }
   }

@@ -1,3 +1,4 @@
+import { CommissionStatus } from '@/entites/target.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -9,7 +10,6 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { CommissionStatus } from 'src/entites/target.entity';
 
 export class CreateTargetDto {
   @ApiProperty({ example: 1 })

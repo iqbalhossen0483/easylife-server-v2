@@ -1,7 +1,7 @@
+import { ExpenseStatus } from '@/entites/expense.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEnum, IsNotEmpty, IsNumber, IsOptional, Min } from 'class-validator';
-import { ExpenseStatus } from 'src/entites/expense.entity';
 
 export class CreateExpenseDto {
   @ApiProperty({ example: 1 })

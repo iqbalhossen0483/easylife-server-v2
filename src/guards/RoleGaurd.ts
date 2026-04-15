@@ -1,3 +1,5 @@
+import { Role_Key } from '@/decorators/Role.decorators';
+import { Designation } from '@/entites/user.entity';
 import {
   CanActivate,
   ExecutionContext,
@@ -6,8 +8,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { Role_Key } from 'src/decorators/Role.decorators';
-import { Designation } from 'src/entites/user.entity';
 
 @Injectable()
 export class RoleGaurd implements CanActivate {

@@ -1,6 +1,6 @@
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
+import { ReportUpdateService } from '@/services/report-update.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { ReportUpdateService } from 'src/services/report-update.service';
 import { OrderService } from './order.service';
 
 const mockRepo = {

@@ -1,5 +1,4 @@
-import { Injectable } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
 import {
   DailyCashReportEntity,
   DailyStockReportEntity,
@@ -7,7 +6,8 @@ import {
   MonthlyStockReportEntity,
   YearlyCashReportEntity,
   YearlyStockReportEntity,
-} from 'src/entites/report.entity';
+} from '@/entites/report.entity';
+import { Injectable } from '@nestjs/common';
 import { EntityManager } from 'typeorm';
 
 type CashField =

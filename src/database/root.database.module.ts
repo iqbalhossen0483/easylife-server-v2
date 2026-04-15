@@ -1,7 +1,7 @@
+import { DbListEntity } from '@/entites/dbList.entity';
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DbListEntity } from 'src/entites/dbList.entity';
 
 const RootDB = TypeOrmModule.forRootAsync({
   inject: [ConfigService],

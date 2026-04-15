@@ -1,3 +1,8 @@
+import { multerConfig } from '@/configs/multer.config';
+import { Role } from '@/decorators/Role.decorators';
+import { Designation } from '@/entites/user.entity';
+import { AuthGaurd } from '@/guards/AuthGaurd';
+import { RoleGaurd } from '@/guards/RoleGaurd';
 import {
   Body,
   Controller,
@@ -14,11 +19,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
-import { multerConfig } from 'src/configs/multer.config';
-import { Role } from 'src/decorators/Role.decorators';
-import { Designation } from 'src/entites/user.entity';
-import { AuthGaurd } from 'src/guards/AuthGaurd';
-import { RoleGaurd } from 'src/guards/RoleGaurd';
 import {
   CreateSupplierDto,
   GetAllSupplierDto,

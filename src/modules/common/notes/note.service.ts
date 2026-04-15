@@ -1,3 +1,7 @@
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
+import { NotesEntity } from '@/entites/notes.entity';
+import { UserEntity } from '@/entites/user.entity';
+import { API_Meta } from '@/types/common';
 import {
   ConflictException,
   Injectable,
@@ -5,10 +9,6 @@ import {
   NotImplementedException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { NotesEntity } from 'src/entites/notes.entity';
-import { UserEntity } from 'src/entites/user.entity';
-import { API_Meta } from 'src/types/common';
 import { FindOptionsWhere } from 'typeorm';
 import { CreateNoteDto, UpdateNoteDto } from './notes.dto';
 

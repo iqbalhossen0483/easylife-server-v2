@@ -1,14 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { TenantDatabaseService } from 'src/database/tenant-datasource.manager';
-import { ProductEntity } from 'src/entites/product.entity';
+import { TenantDatabaseService } from '@/database/tenant-datasource.manager';
+import { ProductEntity } from '@/entites/product.entity';
 import {
   ProductionEntity,
   ProductionProductEntity,
-} from 'src/entites/production.entity';
-import { UserEntity } from 'src/entites/user.entity';
-import { API_Meta } from 'src/types/common';
-import { ReportUpdateService } from 'src/services/report-update.service';
-import { clampLimit } from 'src/utils/file.util';
+} from '@/entites/production.entity';
+import { UserEntity } from '@/entites/user.entity';
+import { ReportUpdateService } from '@/services/report-update.service';
+import { API_Meta } from '@/types/common';
+import { clampLimit } from '@/utils/file.util';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { FindOptionsWhere } from 'typeorm';
 import { CreateProductionDto, GetAllProductionDto } from './production.dto';
 
