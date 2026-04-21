@@ -340,4 +340,31 @@ export class PurchaseService {
       await qr.release();
     }
   }
+
+  async getSinglePurchase(id: number) {
+    const purchaserepo =
+      await this.tenantDbService.getRepository(PurchaseEntity);
+
+    const purchase = await purchaserepo.findOne({
+      where: { id },
+      relations: {
+        supplier: true,
+        purchased_by: true,
+        products: true,
+        payments: true,
+      },
+      select: {
+        supplier: { id: true, name: true, phone: true },
+        purchased_by: { id: true, name: true },
+      },
+    });
+
+    if (!purchase) throw new NotFoundException('Purchase not found');
+
+    return {
+      success: true,
+      message: 'Purchase fetched successfully',
+      data: purchase,
+    };
+  }
 }

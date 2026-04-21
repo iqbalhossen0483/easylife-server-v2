@@ -51,6 +51,11 @@ export class PurchaseController {
     return this.purchaseService.getAllPurchases(payload);
   }
 
+  @Get('/single/:id')
+  async getSingle(@Param('id', ParseIntPipe) id: number) {
+    return this.purchaseService.getSinglePurchase(id);
+  }
+
   @Put('/pay/:id')
   async paySupplier(
     @Param('id', ParseIntPipe) id: number,

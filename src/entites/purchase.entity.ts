@@ -43,7 +43,7 @@ export class PurchaseEntity {
   products!: PurchaseProductEntity[];
 
   @OneToMany(() => PurchaseCollectionEntity, (pc) => pc.purchase)
-  collections!: PurchaseCollectionEntity[];
+  payments!: PurchaseCollectionEntity[];
 
   @CreateDateColumn({ name: 'created_at' })
   created_at!: Date;
