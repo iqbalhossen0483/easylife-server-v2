@@ -43,7 +43,7 @@ export class DailyCashReportEntity {
   cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out!: number;
+  payment!: number;
 }
 
 @Entity('monthly_cash_report')
@@ -85,7 +85,7 @@ export class MonthlyCashReportEntity {
   cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out!: number;
+  payment!: number;
 }
 
 @Entity('yearly_cash_report')
@@ -124,7 +124,7 @@ export class YearlyCashReportEntity {
   cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out!: number;
+  payment!: number;
 }
 
 @Entity('daily_stock_report')

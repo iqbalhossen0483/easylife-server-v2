@@ -127,12 +127,9 @@ export class PurchaseService {
         'total_purchased',
         payload.total_amount,
       );
-      await supRepo.increment(
-        { id: supplier.id },
-        'give_amount',
-        paymentAmount,
-      );
-      await supRepo.increment({ id: supplier.id }, 'due_amount', dueAmount);
+      if (dueAmount > 0) {
+        await supRepo.increment({ id: supplier.id }, 'due_amount', dueAmount);
+      }
 
       // Update product stock
       for (const item of payload.products) {
@@ -151,6 +148,20 @@ export class PurchaseService {
           { id: currentUserId },
           'have_money',
           paymentAmount,
+        );
+
+        // Update supplier cash balance
+        await supRepo.increment(
+          { id: supplier.id },
+          'give_amount',
+          paymentAmount,
+        );
+
+        // update cash reports
+        await this.reportService.updateCashReport(
+          'payment',
+          paymentAmount,
+          qr.manager,
         );
       }
 
@@ -250,6 +261,18 @@ export class PurchaseService {
       throw new BadRequestException('Amount exceeds remaining due');
     }
 
+    if (payload.amount <= 0) {
+      throw new BadRequestException('Amount must be greater than 0');
+    }
+
+    // check user balance
+    const userRepo = await this.tenantDbService.getRepository(UserEntity);
+    const user = await userRepo.findOne({ where: { id: currentUserId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.have_money < payload.amount) {
+      throw new BadRequestException('Insufficient balance');
+    }
+
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
     await qr.startTransaction();
@@ -298,7 +321,7 @@ export class PurchaseService {
         qr.manager,
       );
       await this.reportService.updateCashReport(
-        'cash_out',
+        'payment',
         payload.amount,
         qr.manager,
       );

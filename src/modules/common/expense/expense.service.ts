@@ -66,7 +66,7 @@ export class ExpenseService {
         payload.amount,
       );
       await this.reportService.updateCashReport('expense', payload.amount);
-      await this.reportService.updateCashReport('cash_out', payload.amount);
+      await this.reportService.updateCashReport('payment', payload.amount);
     }
 
     return {
@@ -105,21 +105,17 @@ export class ExpenseService {
 
       // Update expense creator's balance
       const creatorId = expense.created_by.id;
-      await userRepo.decrement(
-        { id: creatorId },
-        'have_money',
-        Number(expense.amount),
-      );
+      await userRepo.decrement({ id: creatorId }, 'have_money', expense.amount);
 
       // Update cash reports
       await this.reportService.updateCashReport(
         'expense',
-        Number(expense.amount),
+        expense.amount,
         qr.manager,
       );
       await this.reportService.updateCashReport(
-        'cash_out',
-        Number(expense.amount),
+        'payment',
+        expense.amount,
         qr.manager,
       );
 

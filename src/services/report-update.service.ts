@@ -17,7 +17,7 @@ type CashField =
   | 'expense'
   | 'purchase'
   | 'cash_in'
-  | 'cash_out';
+  | 'payment';
 
 @Injectable()
 export class ReportUpdateService {
@@ -121,7 +121,7 @@ export class ReportUpdateService {
   }
 
   /**
-   * closing = opening + total_sale - due_sale + collection - purchase - expense - cash_out + cash_in
+   * closing = opening + total_sale - due_sale + collection - expense - payment + cash_in
    */
   private calculateClosing(
     report:
@@ -134,9 +134,8 @@ export class ReportUpdateService {
       Number(report.total_sale) -
       Number(report.due_sale) +
       Number(report.collection) -
-      Number(report.purchase) -
-      Number(report.expense) -
-      Number('cash_out' in report ? report.cash_out : 0) +
+      Number(report.payment) -
+      Number(report.expense) +
       Number('cash_in' in report ? report.cash_in : 0)
     );
   }
