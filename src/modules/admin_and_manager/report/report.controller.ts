@@ -4,7 +4,13 @@ import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
 import type { JWT_Payload } from '@/types/common';
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  ParseIntPipe,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportService } from './report.service';
 
@@ -70,12 +76,9 @@ export class ReportController {
   @Get('/stock-report')
   async getStockReport(
     @Query('date') date?: string,
-    @Query('product_id') product_id?: string,
+    @Query('product_id', ParseIntPipe) product_id?: number,
   ) {
-    return this.reportService.getStockReport(
-      date,
-      product_id ? Number(product_id) : undefined,
-    );
+    return this.reportService.getStockReport(date, product_id);
   }
 
   // User sales activity — super_admin, admin, store_manager

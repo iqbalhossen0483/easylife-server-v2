@@ -12,7 +12,7 @@ import {
 import { TransactionEntity } from '@/entites/transaction.entity';
 import { Designation, UserEntity } from '@/entites/user.entity';
 import { Injectable } from '@nestjs/common';
-import { Between } from 'typeorm';
+import { Between, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
 export class ReportService {
@@ -243,8 +243,9 @@ export class ReportService {
     );
     const targetDate = date ?? new Date().toISOString().split('T')[0];
 
-    const where: Record<string, unknown> = { date: new Date(targetDate) };
-    if (productId) where['product_id'] = productId;
+    const where: FindOptionsWhere<DailyStockReportEntity> = {};
+    if (targetDate) where.date = new Date(targetDate);
+    if (productId) where.product = { id: productId };
 
     const reports = await repo.find({ where });
 

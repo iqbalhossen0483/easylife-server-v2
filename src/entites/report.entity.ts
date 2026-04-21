@@ -10,198 +10,197 @@ import { ProductEntity } from './product.entity';
 @Entity('daily_cash_report')
 export class DailyCashReportEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'date' })
-  date: Date;
+  date!: Date;
 
   @Column({ type: 'int', default: 0 })
-  opening: number;
+  opening!: number;
 
   @Column({ type: 'int', default: 0 })
-  closing: number;
+  closing!: number;
 
   @Column({ type: 'int', default: 0 })
-  total_sale: number;
+  total_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  due_sale: number;
+  due_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  collection: number;
+  collection!: number;
 
   @Column({ type: 'int', default: 0 })
-  expense: number;
+  expense!: number;
 
   @Column({ type: 'int', default: 0 })
-  purchase: number;
+  purchase!: number;
 
   @Column({ type: 'int', default: 0 })
-  market_due: number;
+  market_due!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_in: number;
+  cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out: number;
+  cash_out!: number;
 }
 
 @Entity('monthly_cash_report')
 export class MonthlyCashReportEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'int' })
-  month: number;
+  month!: number;
 
   @Column({ type: 'int' })
-  year: number;
+  year!: number;
 
   @Column({ type: 'int', default: 0 })
-  opening: number;
+  opening!: number;
 
   @Column({ type: 'int', default: 0 })
-  closing: number;
+  closing!: number;
 
   @Column({ type: 'int', default: 0 })
-  total_sale: number;
+  total_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  due_sale: number;
+  due_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  collection: number;
+  collection!: number;
 
   @Column({ type: 'int', default: 0 })
-  expense: number;
+  expense!: number;
 
   @Column({ type: 'int', default: 0 })
-  purchase: number;
+  purchase!: number;
 
   @Column({ type: 'int', default: 0 })
-  market_due: number;
+  market_due!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_in: number;
+  cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out: number;
+  cash_out!: number;
 }
 
 @Entity('yearly_cash_report')
 export class YearlyCashReportEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'int' })
-  year: number;
+  year!: number;
 
   @Column({ type: 'int', default: 0 })
-  opening: number;
+  opening!: number;
 
   @Column({ type: 'int', default: 0 })
-  closing: number;
+  closing!: number;
 
   @Column({ type: 'int', default: 0 })
-  total_sale: number;
+  total_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  due_sale: number;
+  due_sale!: number;
 
   @Column({ type: 'int', default: 0 })
-  collection: number;
+  collection!: number;
 
   @Column({ type: 'int', default: 0 })
-  expense: number;
+  expense!: number;
 
   @Column({ type: 'int', default: 0 })
-  purchase: number;
+  purchase!: number;
 
   @Column({ type: 'int', default: 0 })
-  market_due: number;
+  market_due!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_in: number;
+  cash_in!: number;
 
   @Column({ type: 'int', default: 0 })
-  cash_out: number;
+  cash_out!: number;
 }
 
 @Entity('daily_stock_report')
 export class DailyStockReportEntity {
-  '';
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'date' })
-  date: Date;
+  date!: Date;
 
   @ManyToOne(() => ProductEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product!: ProductEntity;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  total_sold: number;
+  total_sold!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  remaining_stock: number;
+  remaining_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  previous_stock: number;
+  previous_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  purchased: number;
+  purchased!: number;
 }
 
 @Entity('monthly_stock_report')
 export class MonthlyStockReportEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'int' })
-  month: number;
+  month!: number;
 
   @Column({ type: 'int' })
-  year: number;
+  year!: number;
 
   @ManyToOne(() => ProductEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product!: ProductEntity;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  total_sold: number;
+  total_sold!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  remaining_stock: number;
+  remaining_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  previous_stock: number;
+  previous_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  purchased: number;
+  purchased!: number;
 }
 
 @Entity('yearly_stock_report')
 export class YearlyStockReportEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'int' })
-  year: number;
+  year!: number;
 
   @ManyToOne(() => ProductEntity, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'product_id' })
-  product: ProductEntity;
+  product!: ProductEntity;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  total_sold: number;
+  total_sold!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  remaining_stock: number;
+  remaining_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  previous_stock: number;
+  previous_stock!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  purchased: number;
+  purchased!: number;
 }
