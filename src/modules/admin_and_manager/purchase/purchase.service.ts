@@ -52,9 +52,9 @@ export class PurchaseService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    if (user.have_money < paymentAmount)
+    if (user.have_money < paymentAmount) {
       throw new BadRequestException('You have insufficient balance');
-
+    }
     // validate payment amount
     if (paymentAmount > payload.total_amount) {
       throw new BadRequestException(
@@ -88,6 +88,11 @@ export class PurchaseService {
       return pp;
     });
     const products = await Promise.all(purchaseProducts);
+    const purchaseProductRepo = await this.tenantDbService.getRepository(
+      PurchaseProductEntity,
+    );
+
+    await purchaseProductRepo.save(products);
 
     // validate total product price matches total amount
     const calculatedTotal = payload.products.reduce(
