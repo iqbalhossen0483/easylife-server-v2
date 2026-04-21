@@ -95,8 +95,8 @@ export class ReportService {
     value?: string,
     designation?: Designation,
   ) {
-    // Admin restricted to last 2 months for daily
-    if (designation === Designation.ADMIN && method === 'date') {
+    // Admin can get all data but rest are restricted to last 2 months for daily
+    if (designation !== Designation.ADMIN && method === 'date') {
       const twoMonthsAgo = new Date();
       twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
       const requestedDate = new Date(
@@ -105,7 +105,7 @@ export class ReportService {
       if (requestedDate < twoMonthsAgo) {
         return {
           success: false,
-          message: 'Admin can only access last 2 months of data',
+          message: 'You cannot view reports older than 2 months',
           data: null,
         };
       }
