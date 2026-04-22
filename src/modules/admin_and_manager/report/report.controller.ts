@@ -20,7 +20,6 @@ import { ReportService } from './report.service';
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
-  // Dashboard — super_admin: full, admin: last 2 months
   @Role(Designation.ADMIN)
   @Get('/')
   async getDashboard(@CurrentUser() user: JWT_Payload) {

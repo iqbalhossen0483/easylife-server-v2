@@ -117,7 +117,26 @@ export class ReportService {
       );
       const date = value ?? new Date().toISOString().split('T')[0];
       const report = await repo.findOne({ where: { date: new Date(date) } });
-      return { success: true, message: 'Daily cash report', data: report };
+      const dailyReportTemplate = repo.create({
+        id: 0,
+        date: new Date(date),
+        opening: 0,
+        total_sale: 0,
+        due_sale: 0,
+        collection: 0,
+        cash_in: 0,
+        expense: 0,
+        payment: 0,
+        market_due: 0,
+        purchase: 0,
+        closing: 0,
+      });
+
+      return {
+        success: true,
+        message: 'Daily cash report',
+        data: report ?? dailyReportTemplate,
+      };
     }
 
     if (method === 'month') {
@@ -129,7 +148,26 @@ export class ReportService {
         ? value.split('-').map(Number)
         : [now.getFullYear(), now.getMonth() + 1];
       const report = await repo.findOne({ where: { year: y, month: m } });
-      return { success: true, message: 'Monthly cash report', data: report };
+      const monthlyReportTemplate = repo.create({
+        id: 0,
+        year: y,
+        month: m,
+        opening: 0,
+        total_sale: 0,
+        due_sale: 0,
+        collection: 0,
+        cash_in: 0,
+        expense: 0,
+        payment: 0,
+        market_due: 0,
+        purchase: 0,
+        closing: 0,
+      });
+      return {
+        success: true,
+        message: 'Monthly cash report',
+        data: report ?? monthlyReportTemplate,
+      };
     }
 
     const repo = await this.tenantDbService.getRepository(
@@ -137,7 +175,25 @@ export class ReportService {
     );
     const year = value ? Number(value) : new Date().getFullYear();
     const report = await repo.findOne({ where: { year } });
-    return { success: true, message: 'Yearly cash report', data: report };
+    const yearlyReportTemplate = repo.create({
+      id: 0,
+      year,
+      opening: 0,
+      total_sale: 0,
+      due_sale: 0,
+      collection: 0,
+      cash_in: 0,
+      expense: 0,
+      payment: 0,
+      market_due: 0,
+      purchase: 0,
+      closing: 0,
+    });
+    return {
+      success: true,
+      message: 'Yearly cash report',
+      data: report ?? yearlyReportTemplate,
+    };
   }
 
   async getUndeliveredOrders() {
