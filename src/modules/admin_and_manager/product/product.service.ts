@@ -176,4 +176,30 @@ export class ProductService {
       message: 'Product deleted successfully',
     };
   }
+
+  // restore deleted product
+  async restoreProduct(productId: number) {
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
+
+    const product = await productRepo.findOne({
+      where: { id: productId },
+      withDeleted: true,
+    });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    const result = await productRepo.restore({ id: productId });
+    if (result.affected === 0) {
+      throw new NotImplementedException('Something went wrong');
+    }
+
+    // Increment tenant product count
+    await this.tenantDbService.updateTenantCount('current_product', true);
+
+    return {
+      success: true,
+      message: 'Product restored successfully',
+    };
+  }
 }

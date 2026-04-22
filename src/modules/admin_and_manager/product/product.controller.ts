@@ -78,4 +78,10 @@ export class ProductController {
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.productService.deleteProduct(id);
   }
+
+  @Role(Designation.SUPER_ADMIN)
+  @Put('/restore/:id')
+  async restore(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.restoreProduct(id);
+  }
 }
