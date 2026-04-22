@@ -101,7 +101,12 @@ export class GetAllProductDto {
   @IsNumber({ allowNaN: false }, { message: 'Limit must be a number' })
   limit?: number;
 
-  @ApiPropertyOptional({ example: 'Coffee' })
+  @ApiPropertyOptional({ example: '' })
   @IsOptional()
   search?: string;
+
+  @ApiPropertyOptional({ example: ProductType.MAIN_PRODUCT })
+  @IsOptional()
+  @IsEnum(ProductType, { message: 'Invalid product type' })
+  type?: ProductType;
 }

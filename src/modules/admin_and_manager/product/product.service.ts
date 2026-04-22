@@ -60,7 +60,12 @@ export class ProductService {
     }
   }
 
-  async getAllProducts({ page = 1, limit = 10, search }: GetAllProductDto) {
+  async getAllProducts({
+    page = 1,
+    limit = 10,
+    search,
+    type,
+  }: GetAllProductDto) {
     limit = clampLimit(limit);
     const skip = (page - 1) * limit;
 
@@ -68,6 +73,10 @@ export class ProductService {
     if (search) {
       query.push({ name: ILike(`%${search}%`) });
       query.push({ short_name: ILike(`%${search}%`) });
+    }
+
+    if (type) {
+      query.push({ type });
     }
 
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
