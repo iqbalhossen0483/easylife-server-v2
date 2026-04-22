@@ -40,6 +40,11 @@ export class ProductService {
     try {
       const prodRepo = qr.manager.getRepository(ProductEntity);
       const product = prodRepo.create(payload);
+      if (payload.init_stock) product.current_stock = payload.init_stock;
+      if (!payload.sl) {
+        const count = await prodRepo.count();
+        product.sl = count + 1;
+      }
       await prodRepo.save(product);
 
       // Increment tenant product count

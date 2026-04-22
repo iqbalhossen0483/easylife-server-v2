@@ -44,6 +44,15 @@ export class CreateProductDto {
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Sort order must be a number' })
   sl?: number;
 
+  @ApiPropertyOptional({ example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber(
+    { maxDecimalPlaces: 0 },
+    { message: 'Initial stock must be a number' },
+  )
+  init_stock?: number;
+
   @IsOptional()
   image?: string;
 }
