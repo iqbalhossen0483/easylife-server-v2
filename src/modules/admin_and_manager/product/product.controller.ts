@@ -34,14 +34,14 @@ export class ProductController {
 
   @Role(Designation.STORE_MANAGER)
   @Post('/create')
-  @UseInterceptors(FileInterceptor('profile', multerConfig))
+  @UseInterceptors(FileInterceptor('image', multerConfig))
   @ApiConsumes('multipart/form-data')
   async create(
     @Body() payload: CreateProductDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file) {
-      payload.profile = file.filename;
+      payload.image = file.filename;
     }
     return this.productService.createProduct(payload);
   }
@@ -60,7 +60,7 @@ export class ProductController {
 
   @Role(Designation.SUPER_ADMIN)
   @Put('/update/:id')
-  @UseInterceptors(FileInterceptor('profile', multerConfig))
+  @UseInterceptors(FileInterceptor('image', multerConfig))
   @ApiConsumes('multipart/form-data')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -68,7 +68,7 @@ export class ProductController {
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (file) {
-      payload.profile = file.filename;
+      payload.image = file.filename;
     }
     return this.productService.updateProduct(id, payload);
   }

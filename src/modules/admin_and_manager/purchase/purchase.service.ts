@@ -187,7 +187,7 @@ export class PurchaseService {
             item.product_id,
             0,
             item.qty,
-            product.stock,
+            product.current_stock,
             qr.manager,
           );
         }

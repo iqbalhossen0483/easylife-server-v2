@@ -14,7 +14,7 @@ export class CreateProductDto {
   @ApiProperty({ example: 'Arabica Coffee Beans' })
   @IsNotEmpty({ message: 'Product name is required' })
   @Length(2, 100, { message: 'Name must be between 2 and 100 characters' })
-  name: string;
+  name!: string;
 
   @ApiPropertyOptional({ example: 'ACB' })
   @IsOptional()
@@ -30,13 +30,13 @@ export class CreateProductDto {
   @IsNotEmpty({ message: 'Price is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Price must be a number' })
-  price: number;
+  price!: number;
 
   @ApiProperty({ example: 50 })
   @IsNotEmpty({ message: 'Cost is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Cost must be a number' })
-  cost: number;
+  cost!: number;
 
   @ApiPropertyOptional({ example: 1 })
   @IsOptional()
@@ -45,7 +45,7 @@ export class CreateProductDto {
   sl?: number;
 
   @IsOptional()
-  profile?: string;
+  image?: string;
 }
 
 export class UpdateProductDto {
@@ -85,7 +85,7 @@ export class UpdateProductDto {
   sl?: number;
 
   @IsOptional()
-  profile?: string;
+  image?: string;
 }
 
 export class GetAllProductDto {

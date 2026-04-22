@@ -279,7 +279,7 @@ export class ReportService {
         id: true,
         name: true,
         sold: true,
-        stock: true,
+        current_stock: true,
         purchased: true,
       },
       order: { sold: 'DESC' },

@@ -56,7 +56,7 @@ export class OrderService {
         where: { id: p.product_id },
       });
       if (!product) throw new NotFoundException('Product not found');
-      if (product.stock < p.qty)
+      if (product.current_stock < p.qty)
         throw new BadRequestException('Product has insufficient stock');
     }
 
@@ -372,7 +372,7 @@ export class OrderService {
             item.product_id,
             item.qty,
             0,
-            product.stock,
+            product.current_stock,
             qr.manager,
           );
         }

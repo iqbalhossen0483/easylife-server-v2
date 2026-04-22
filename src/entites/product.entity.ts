@@ -10,7 +10,6 @@ import {
 export enum ProductType {
   RAW_MATERIAL = 'raw_material',
   MAIN_PRODUCT = 'main_product',
-  EXTARNAL_PRODUCT = 'external_product',
 }
 
 @Entity('products')
@@ -30,8 +29,8 @@ export class ProductEntity {
   @Column({ type: 'int', default: 0 })
   sl!: number;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  profile!: string;
+  @Column({ type: 'text', nullable: true })
+  image!: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   price!: number;
@@ -39,9 +38,12 @@ export class ProductEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   cost!: number;
 
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  init_stock!: number;
+
   // Inventory fields
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  stock!: number;
+  current_stock!: number;
 
   @Column({ type: 'int', default: 0 })
   purchased!: number;

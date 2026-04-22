@@ -84,7 +84,7 @@ export class ProductionService {
           payload.product_id,
           0,
           0,
-          updatedProduct.stock,
+          updatedProduct.current_stock,
           qr.manager,
         );
       }

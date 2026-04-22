@@ -28,6 +28,11 @@ export class ProductService {
     if (existing) {
       throw new ConflictException('Product with this name already exists');
     }
+    const dbInfo = await this.tenantDbService.getDataDatabase();
+
+    if (dbInfo.current_product >= dbInfo.max_product) {
+      throw new ConflictException('Maximum product limit reached');
+    }
 
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
@@ -127,8 +132,8 @@ export class ProductService {
     }
 
     // Delete old profile image if new one is uploaded
-    if (payload.profile && product.profile) {
-      await deleteFile(product.profile);
+    if (payload.image && product.image) {
+      await deleteFile(product.image);
     }
 
     await productRepo.update({ id: productId }, payload);
