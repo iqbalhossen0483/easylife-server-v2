@@ -20,3 +20,9 @@ export function clampLimit(limit?: number): number {
   const val = limit ?? DEFAULT_PAGE_LIMIT;
   return Math.min(Math.max(val, 1), MAX_PAGE_LIMIT);
 }
+
+export const encodeBase64 = (value: string) =>
+  Buffer.from(value).toString('base64');
+
+export const decodeBase64 = (value: string) =>
+  Buffer.from(value, 'base64').toString('utf-8');

@@ -23,6 +23,7 @@ declare module 'express-serve-static-core' {
 type API_Meta = {
   total: number;
   limit: number;
-  currentPage: number;
+  currentPage?: number;
+  cursor?: string | null;
   totalPages: number;
 };

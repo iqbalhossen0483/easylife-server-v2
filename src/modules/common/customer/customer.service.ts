@@ -3,14 +3,19 @@ import { CustomerEntity } from '@/entites/customer.entity';
 import { OrderEntity } from '@/entites/order.entity';
 import { UserEntity } from '@/entites/user.entity';
 import { API_Meta } from '@/types/common';
-import { clampLimit, deleteFile } from '@/utils/file.util';
+import {
+  clampLimit,
+  decodeBase64,
+  deleteFile,
+  encodeBase64,
+} from '@/utils/file.util';
 import {
   ConflictException,
   Injectable,
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { FindOptionsWhere, ILike } from 'typeorm';
+import { FindOptionsWhere, ILike, LessThan } from 'typeorm';
 import {
   CreateCustomerDto,
   GetAllCustomerDto,
@@ -63,61 +68,82 @@ export class CustomerService {
     }
   }
 
-  async getAllCustomers({ page = 1, limit = 10, search }: GetAllCustomerDto) {
+  async getAllCustomers({ cursor, limit = 10, search }: GetAllCustomerDto) {
     limit = clampLimit(limit);
-    const skip = (page - 1) * limit;
-
-    const query: FindOptionsWhere<CustomerEntity>[] = [];
-    if (search) {
-      query.push({ shop_name: ILike(`%${search}%`) });
-      query.push({ address: ILike(`%${search}%`) });
-      query.push({ phone: ILike(`%${search}%`) });
-    }
+    const decodedCursor = cursor ? Number(decodeBase64(cursor)) : null;
 
     const customerRepo =
       await this.tenantDbService.getRepository(CustomerEntity);
 
-    const [customers, total] = await customerRepo.findAndCount({
-      where: query.length ? query : undefined,
-      relations: { added_by: true },
-      select: {
-        id: true,
-        shop_name: true,
-        address: true,
-        phone: true,
-        machine_type: true,
-        machine_model: true,
-        profile: true,
-        commission: true,
-        total_sale: true,
-        due_sale: true,
-        due: true,
-        collection: true,
-        discount: true,
-        last_order: true,
-        created_at: true,
-        added_by: {
-          id: true,
-          name: true,
-        },
-      },
-      order: { created_at: 'DESC' },
-      take: limit,
-      skip,
-    });
+    const cursorCondition: FindOptionsWhere<CustomerEntity> = decodedCursor
+      ? { id: LessThan(decodedCursor) }
+      : {};
 
-    const meta: API_Meta = {
-      total,
-      limit,
-      currentPage: page,
-      totalPages: Math.ceil(total / limit),
-    };
+    const where: FindOptionsWhere<CustomerEntity>[] = search
+      ? [
+          { shop_name: ILike(`%${search}%`), ...cursorCondition },
+          { address: ILike(`%${search}%`), ...cursorCondition },
+          { phone: ILike(`%${search}%`), ...cursorCondition },
+        ]
+      : Object.keys(cursorCondition).length
+        ? [cursorCondition]
+        : [];
+
+    const totalWhere: FindOptionsWhere<CustomerEntity>[] = search
+      ? [
+          { shop_name: ILike(`%${search}%`) },
+          { address: ILike(`%${search}%`) },
+          { phone: ILike(`%${search}%`) },
+        ]
+      : [];
+
+    const [customers, total] = await Promise.all([
+      customerRepo.find({
+        where: where.length ? where : undefined,
+        relations: { added_by: true },
+        select: {
+          id: true,
+          shop_name: true,
+          address: true,
+          phone: true,
+          machine_type: true,
+          machine_model: true,
+          profile: true,
+          commission: true,
+          total_sale: true,
+          due_sale: true,
+          due: true,
+          collection: true,
+          discount: true,
+          last_order: true,
+          created_at: true,
+          added_by: { id: true, name: true },
+        },
+        order: { id: 'DESC' },
+        take: limit + 1,
+      }),
+      customerRepo.count({
+        where: totalWhere.length ? totalWhere : undefined,
+      }),
+    ]);
+
+    let nextCursor: string | null = null;
+    if (customers.length > limit) {
+      customers.pop();
+      const lastVisible = customers[customers.length - 1];
+      nextCursor = encodeBase64(String(lastVisible.id));
+    }
 
     return {
       success: true,
       message: 'Customers fetched successfully',
       data: customers,
-      meta,
+      meta: {
+        total,
+        limit,
+        cursor: nextCursor,
+        totalPages: Math.ceil(total / limit),
+      } as API_Meta,
     };
   }
 

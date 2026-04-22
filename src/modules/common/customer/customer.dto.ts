@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Length,
   Max,
   Min,
@@ -13,17 +14,17 @@ export class CreateCustomerDto {
   @ApiProperty({ example: 'Al-Amin Store' })
   @IsNotEmpty({ message: 'Shop name is required' })
   @Length(3, 100, { message: 'Shop name must be between 3 and 100 characters' })
-  shop_name: string;
+  shop_name!: string;
 
   @ApiProperty({ example: 'Mirpur-10, Dhaka' })
   @IsNotEmpty({ message: 'Address is required' })
   @Length(3, 150, { message: 'Address must be between 3 and 150 characters' })
-  address: string;
+  address!: string;
 
   @ApiProperty({ example: '01712345678' })
   @IsNotEmpty({ message: 'Phone number is required' })
   @Length(11, 11, { message: 'Phone number must be 11 characters' })
-  phone: string;
+  phone!: string;
 
   @ApiPropertyOptional({ example: 'Espresso Machine' })
   @IsOptional()
@@ -98,11 +99,10 @@ export class UpdateCustomerDto {
 }
 
 export class GetAllCustomerDto {
-  @ApiPropertyOptional({ example: 1 })
+  @ApiPropertyOptional({ example: '' })
   @IsOptional()
-  @Type(() => Number)
-  @IsNumber({ allowNaN: false }, { message: 'Page must be a number' })
-  page?: number;
+  @IsString({ message: 'Cursor must be a string' })
+  cursor?: string;
 
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
