@@ -8,7 +8,7 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { FindOptionsWhere, ILike } from 'typeorm';
+import { FindOptionsWhere, ILike, IsNull, Not } from 'typeorm';
 import {
   CreateProductDto,
   GetAllProductDto,
@@ -205,6 +205,22 @@ export class ProductService {
     return {
       success: true,
       message: 'Product restored successfully',
+    };
+  }
+
+  async getTrashProducts() {
+    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
+
+    const products = await productRepo.find({
+      withDeleted: true,
+      where: { deleted_at: Not(IsNull()) },
+      order: { deleted_at: 'DESC' },
+    });
+
+    return {
+      success: true,
+      message: 'Products fetched successfully',
+      data: products,
     };
   }
 }

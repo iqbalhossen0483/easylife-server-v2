@@ -84,4 +84,10 @@ export class ProductController {
   async restore(@Param('id', ParseIntPipe) id: number) {
     return this.productService.restoreProduct(id);
   }
+
+  @Role(Designation.SUPER_ADMIN)
+  @Get('/trash')
+  async getTrash() {
+    return this.productService.getTrashProducts();
+  }
 }
