@@ -20,20 +20,20 @@ export enum CommissionStatus {
 @Entity('user_commision_target')
 export class Target {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user!: UserEntity;
 
   @Column({ name: 'targeted_amnt', type: 'int', default: 0 })
-  targeted_amnt: number;
+  targeted_amnt!: number;
 
   @Column({ name: 'start_date', type: 'timestamp' })
-  start_date: Date;
+  start_date!: Date;
 
   @Column({ name: 'end_date', type: 'timestamp' })
-  end_date: Date;
+  end_date!: Date;
 
   @Column({
     name: 'commission_percentage',
@@ -42,34 +42,34 @@ export class Target {
     precision: 100,
     scale: 4,
   })
-  commission_percentage: number;
+  commission_percentage!: number;
 
   @Column({ name: 'commission_amount', type: 'decimal', default: 0 })
-  commission_amount: number;
+  commission_amount!: number;
 
   @Column({
     type: 'enum',
     enum: CommissionStatus,
     default: CommissionStatus.PENDING,
   })
-  status: CommissionStatus;
+  status!: CommissionStatus;
 
   @Column({ name: 'achived_amnt', type: 'int', default: 0 })
-  achived_amnt: number;
+  achived_amnt!: number;
 
   @Column({ name: 'failed_amnt', type: 'int', default: 0 })
-  failed_amnt: number;
+  failed_amnt!: number;
 
   @ManyToOne(() => UserEntity, (user) => user.id)
   @JoinColumn({ name: 'created_by' })
-  created_by: UserEntity;
+  created_by!: UserEntity;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at!: Date;
 }

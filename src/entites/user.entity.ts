@@ -23,23 +23,23 @@ export enum Designation {
 @Entity('users')
 export class UserEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar', length: 40 })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', length: 50 })
-  address: string;
+  address!: string;
 
   @Index('IDX_USER_PHONE', { unique: true })
   @Column({ type: 'varchar', length: 11 })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'text' })
-  password: string;
+  password!: string;
 
   @Column({ type: 'enum', enum: Designation })
-  designation: Designation;
+  designation!: Designation;
 
   @Column({ type: 'varchar', length: 100, default: null })
   profile?: string;
@@ -48,37 +48,37 @@ export class UserEntity {
   delivered_order?: number;
 
   @Column({ name: 'total_sale', default: 0 })
-  total_sale: number;
+  total_sale!: number;
 
   @Column({ name: 'due_sale', default: 0 })
-  due_sale: number;
+  due_sale!: number;
 
   @Column({ name: 'due_collection', default: 0 })
-  due_collection: number;
+  due_collection!: number;
 
   @Column({ name: 'get_salary', default: 0 })
-  get_salary: number;
+  get_salary!: number;
 
   @Column({ default: 0 })
-  incentive: number;
+  incentive!: number;
 
   @Column({ name: 'have_money', default: 0 })
-  have_money: number;
+  have_money!: number;
 
   @Column({ default: 0 })
-  debt: number;
+  debt!: number;
 
   @Column({ name: 'push_token', type: 'text', default: null })
-  push_token: string;
+  push_token!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at!: Date;
 
   // relations
   @ManyToOne(() => UserEntity, (user) => user.created_users, {
@@ -86,14 +86,14 @@ export class UserEntity {
     onDelete: 'SET NULL',
   })
   @JoinColumn({ name: 'created_by' })
-  created_by: UserEntity | null;
+  created_by!: UserEntity | null;
 
   @OneToMany(() => UserEntity, (user) => user.created_by)
-  created_users: UserEntity[];
+  created_users!: UserEntity[];
 
   @OneToMany(() => Target, (target) => target.user)
-  targets: Target[];
+  targets!: Target[];
 
   @OneToMany(() => NotesEntity, (note) => note.user)
-  notes: NotesEntity[];
+  notes!: NotesEntity[];
 }

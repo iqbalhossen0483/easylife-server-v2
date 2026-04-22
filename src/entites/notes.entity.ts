@@ -13,24 +13,24 @@ import { UserEntity } from './user.entity';
 @Entity('notes')
 export class NotesEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => UserEntity, (user) => user.notes)
   @JoinColumn({ name: 'user_id' })
-  user: UserEntity;
+  user!: UserEntity;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  title: string;
+  title!: string;
 
   @Column({ type: 'text' })
-  content: string;
+  content!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at!: Date;
 }

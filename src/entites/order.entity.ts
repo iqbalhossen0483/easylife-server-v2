@@ -21,19 +21,19 @@ export enum OrderStatus {
 @Entity('orders')
 export class OrderEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => CustomerEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'shop_id' })
-  shop: CustomerEntity;
+  shop!: CustomerEntity;
 
   @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'created_by' })
-  created_by: UserEntity;
+  created_by!: UserEntity;
 
   @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'delivered_by' })
-  delivered_by: UserEntity;
+  delivered_by!: UserEntity;
 
   @Column({
     name: 'total_sale',
@@ -42,94 +42,94 @@ export class OrderEntity {
     scale: 2,
     default: 0,
   })
-  total_sale: number;
+  total_sale!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  payment: number;
+  payment!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  due: number;
+  due!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  discount: number;
+  discount!: number;
 
   @Column({
     type: 'enum',
     enum: OrderStatus,
     default: OrderStatus.UNDELIVERED,
   })
-  status: OrderStatus;
+  status!: OrderStatus;
 
   @OneToMany(() => OrderProductEntity, (op) => op.order, { cascade: true })
-  products: OrderProductEntity[];
+  products!: OrderProductEntity[];
 
   @OneToMany(() => CollectionEntity, (c) => c.order)
-  collections: CollectionEntity[];
+  collections!: CollectionEntity[];
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at!: Date;
 }
 
 @Entity('orders_products')
 export class OrderProductEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => OrderEntity, (order) => order.products, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'order_id' })
-  order: OrderEntity;
+  order!: OrderEntity;
 
   @Column({ name: 'product_id', type: 'int' })
-  product_id: number;
+  product_id!: number;
 
   @Column({ name: 'product_name', type: 'varchar', length: 100 })
-  product_name: string;
+  product_name!: string;
 
   @Column({ type: 'int', default: 0 })
-  qty: number;
+  qty!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  price: number;
+  price!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  total: number;
+  total!: number;
 
   @Column({ name: 'is_free', type: 'boolean', default: false })
-  is_free: boolean;
+  is_free!: boolean;
 }
 
 @Entity('collections')
 export class CollectionEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => OrderEntity, (order) => order.collections, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'order_id' })
-  order: OrderEntity;
+  order!: OrderEntity;
 
   @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'receiver_id' })
-  receiver: UserEntity;
+  receiver!: UserEntity;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  discount: number;
+  discount!: number;
 
   @Column({ type: 'text', nullable: true })
-  notes: string;
+  notes!: string;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 }

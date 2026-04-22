@@ -10,19 +10,19 @@ import {
 @Entity('suppliers')
 export class SupplierEntity {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar', length: 100 })
-  name: string;
+  name!: string;
 
   @Column({ type: 'varchar', length: 11 })
-  phone: string;
+  phone!: string;
 
   @Column({ type: 'varchar', length: 150, nullable: true })
-  address: string;
+  address!: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  profile: string;
+  profile!: string;
 
   // Financial fields
   @Column({
@@ -32,7 +32,7 @@ export class SupplierEntity {
     scale: 2,
     default: 0,
   })
-  total_purchased: number;
+  total_purchased!: number;
 
   @Column({
     name: 'give_amount',
@@ -41,7 +41,7 @@ export class SupplierEntity {
     scale: 2,
     default: 0,
   })
-  give_amount: number;
+  give_amount!: number;
 
   @Column({
     name: 'due_amount',
@@ -50,17 +50,17 @@ export class SupplierEntity {
     scale: 2,
     default: 0,
   })
-  due_amount: number;
+  due_amount!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
-  discount: number;
+  discount!: number;
 
   @CreateDateColumn({ name: 'created_at' })
-  created_at: Date;
+  created_at!: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })
-  updated_at: Date;
+  updated_at!: Date;
 
   @DeleteDateColumn({ name: 'deleted_at' })
-  deleted_at: Date;
+  deleted_at!: Date;
 }
