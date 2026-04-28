@@ -23,11 +23,12 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { Between, FindOptionsWhere } from 'typeorm';
+import { Between, EntityManager, FindOptionsWhere } from 'typeorm';
 import {
   CollectPaymentDto,
   CreateOrderDto,
   GetAllOrderDto,
+  OrderProductItemDto,
   UpdateOrderDto,
 } from './order.dto';
 
@@ -38,47 +39,43 @@ export class OrderService {
     private readonly reportService: ReportUpdateService,
   ) {}
 
-  async createOrder(payload: CreateOrderDto, currentUserId: number) {
-    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const customerRepo =
-      await this.tenantDbService.getRepository(CustomerEntity);
-    console.log(payload);
-
-    const customer = await customerRepo.findOne({
-      where: { id: payload.shop_id },
-    });
-    if (!customer) throw new NotFoundException('Customer not found');
-
-    // Validate products stock;
+  async orderValidation(
+    products: OrderProductItemDto[],
+    total_sale: number,
+    payment?: number,
+  ) {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
-    for (const p of payload.products) {
+
+    // validate products and calculate total
+    const productSet = new Set();
+    let calculatedTotal = 0;
+    for (const p of products) {
+      // Validate products stock;
       const product = await productRepo.findOne({
         where: { id: p.product_id },
       });
       if (!product) throw new NotFoundException('Product not found');
-      if (product.current_stock < p.qty)
+      if (product.current_stock < p.qty) {
         throw new BadRequestException('Product has insufficient stock');
-    }
+      }
 
-    // Validate products total matches total_sale
-    const calculatedTotal = payload.products.reduce(
-      (sum, p) => sum + Number(p.total),
-      0,
-    );
-    if (Math.abs(calculatedTotal - payload.total_sale) > 0.01) {
-      throw new BadRequestException(
-        `Products total (${calculatedTotal}) does not match total_sale (${payload.total_sale})`,
-      );
-    }
+      calculatedTotal += p.total;
+      // If price is 0, it must be marked as free
+      if (p.price === 0 && !p.is_free) {
+        throw new BadRequestException(
+          `Product "${p.product_name}" price is 0 but not marked as free`,
+        );
+      }
 
-    // Validate payment does not exceed total_sale
-    const payment = payload.payment ?? 0;
-    if (payment > payload.total_sale) {
-      throw new BadRequestException('Payment cannot exceed total sale amount');
-    }
+      // validate product duplication in the list
+      if (productSet.has(p.product_id)) {
+        throw new BadRequestException(
+          `Product "${p.product_name}" is duplicated in the list`,
+        );
+      }
+      productSet.add(p.product_id);
 
-    // Validate each product's total = qty * price
-    for (const p of payload.products) {
+      // Validate each product's total = qty * price
       const expectedTotal = p.qty * p.price;
       if (Math.abs(expectedTotal - p.total) > 0.01) {
         throw new BadRequestException(
@@ -86,6 +83,35 @@ export class OrderService {
         );
       }
     }
+
+    // Validate products total matches total_sale
+    if (Math.abs(calculatedTotal - total_sale) > 0.01) {
+      throw new BadRequestException(
+        `Products total (${calculatedTotal}) does not match total_sale (${total_sale})`,
+      );
+    }
+
+    // Validate payment does not exceed total_sale
+    if ((payment || 0) > total_sale) {
+      throw new BadRequestException('Payment cannot exceed total sale amount');
+    }
+  }
+
+  async createOrder(payload: CreateOrderDto, currentUserId: number) {
+    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
+    const customerRepo =
+      await this.tenantDbService.getRepository(CustomerEntity);
+
+    const customer = await customerRepo.findOne({
+      where: { id: payload.shop_id },
+    });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    await this.orderValidation(
+      payload.products,
+      payload.total_sale,
+      payload.payment,
+    );
 
     const orderProducts = payload.products.map((p) => {
       const op = new OrderProductEntity();
@@ -102,7 +128,7 @@ export class OrderService {
       created_by: { id: currentUserId } as UserEntity,
       total_sale: payload.total_sale,
       payment: payload.payment ?? 0,
-      due: payload.due ?? payload.total_sale - (payload.payment ?? 0),
+      due: payload.total_sale - (payload.payment ?? 0),
       status: OrderStatus.UNDELIVERED,
       products: orderProducts,
     });
@@ -222,18 +248,15 @@ export class OrderService {
       throw new BadRequestException('Cannot edit a delivered order');
     }
 
-    if (payload.delivered_by) {
-      const userRepo = await this.tenantDbService.getRepository(UserEntity);
-      const deliveryUser = await userRepo.findOne({
-        where: { id: payload.delivered_by },
-      });
-      if (!deliveryUser) throw new NotFoundException('Delivery user not found');
-      order.delivered_by = deliveryUser;
-    }
+    const total_sale = payload.total_sale ?? order.total_sale;
+    const payment = payload.payment ?? order.payment;
+    const due = total_sale - payment;
 
-    if (payload.total_sale !== undefined) order.total_sale = payload.total_sale;
-    if (payload.payment !== undefined) order.payment = payload.payment;
-    if (payload.due !== undefined) order.due = payload.due;
+    await this.orderValidation(payload.products ?? [], total_sale, payment);
+
+    order.total_sale = total_sale;
+    order.payment = payment;
+    order.due = due;
 
     // Replace products if provided
     if (payload.products) {
@@ -262,7 +285,7 @@ export class OrderService {
     };
   }
 
-  async deliverOrder(orderId: number) {
+  async deliverOrder(orderId: number, cashReceived: number) {
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
     await qr.startTransaction();
@@ -309,7 +332,11 @@ export class OrderService {
       // Update product stock (batch via query builder)
       const productRepo = qr.manager.getRepository(ProductEntity);
       for (const item of order.products) {
-        await productRepo.decrement({ id: item.product_id }, 'stock', item.qty);
+        await productRepo.decrement(
+          { id: item.product_id },
+          'current_stock',
+          item.qty,
+        );
         await productRepo.increment({ id: item.product_id }, 'sold', item.qty);
       }
 
@@ -322,20 +349,27 @@ export class OrderService {
           1,
         );
         await userRepo.increment(
-          { id: order.delivered_by.id },
+          { id: order.created_by.id },
           'total_sale',
           order.total_sale,
         );
         await userRepo.increment(
-          { id: order.delivered_by.id },
+          { id: order.created_by.id },
           'due_sale',
           order.due,
         );
         if (order.payment > 0) {
           await userRepo.increment(
-            { id: order.delivered_by.id },
+            { id: order.created_by.id },
             'have_money',
             order.payment,
+          );
+        }
+        if (cashReceived > 0) {
+          await userRepo.increment(
+            { id: order.delivered_by.id },
+            'have_money',
+            cashReceived,
           );
         }
       }
@@ -603,10 +637,7 @@ export class OrderService {
 
   // --- Private helpers ---
 
-  private async updateSalesTargets(
-    order: OrderEntity,
-    manager: import('typeorm').EntityManager,
-  ) {
+  private async updateSalesTargets(order: OrderEntity, manager: EntityManager) {
     const targetRepo = manager.getRepository(Target);
     const totalSale = Number(order.total_sale);
 
@@ -617,55 +648,15 @@ export class OrderService {
 
     if (achievableAmount <= 0) return;
 
-    const isSameUser = order.created_by?.id === order.delivered_by?.id;
-
-    if (isSameUser) {
-      // Same user created and delivered — full achievable amount
-      if (order.delivered_by) {
-        const target = await targetRepo.findOne({
-          where: {
-            user: { id: order.delivered_by.id },
-            status: CommissionStatus.RUNNING,
-          },
-        });
-        if (target) {
-          target.achived_amnt = Number(target.achived_amnt) + achievableAmount;
-          await targetRepo.save(target);
-        }
-      }
-    } else {
-      const halfAmount = Math.round(achievableAmount / 2);
-
-      // 50% to delivery user
-      if (order.delivered_by) {
-        const deliveryTarget = await targetRepo.findOne({
-          where: {
-            user: { id: order.delivered_by.id },
-            status: CommissionStatus.RUNNING,
-          },
-        });
-        if (deliveryTarget) {
-          deliveryTarget.achived_amnt =
-            Number(deliveryTarget.achived_amnt) + halfAmount;
-          await targetRepo.save(deliveryTarget);
-        }
-      }
-
-      // 50% to order creator
-      if (order.created_by) {
-        const creatorTarget = await targetRepo.findOne({
-          where: {
-            user: { id: order.created_by.id },
-            status: CommissionStatus.RUNNING,
-          },
-        });
-        if (creatorTarget) {
-          creatorTarget.achived_amnt =
-            Number(creatorTarget.achived_amnt) +
-            (achievableAmount - halfAmount);
-          await targetRepo.save(creatorTarget);
-        }
-      }
+    const target = await targetRepo.findOne({
+      where: {
+        user: { id: order.created_by.id },
+        status: CommissionStatus.RUNNING,
+      },
+    });
+    if (target) {
+      target.achived_amnt = Number(target.achived_amnt) + achievableAmount;
+      await targetRepo.save(target);
     }
   }
 }

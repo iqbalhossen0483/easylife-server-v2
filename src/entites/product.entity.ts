@@ -45,10 +45,10 @@ export class ProductEntity {
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   current_stock!: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   purchased!: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   sold!: number;
 
   @CreateDateColumn({ name: 'created_at' })

@@ -5,6 +5,7 @@ import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
 import type { JWT_Payload } from '@/types/common';
+import { deleteFile } from '@/utils/file.util';
 import {
   Body,
   Controller,
@@ -42,8 +43,17 @@ export class PurchaseController {
     @CurrentUser() user: JWT_Payload,
     @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    const fileNames = files?.map((f) => f.filename) ?? [];
-    return this.purchaseService.createPurchase(payload, fileNames, user.sub);
+    try {
+      const fileNames = files?.map((f) => f.filename) ?? [];
+      return await this.purchaseService.createPurchase(
+        payload,
+        fileNames,
+        user.sub,
+      );
+    } catch (error) {
+      if (files) files?.forEach((file) => void deleteFile(file.filename));
+      throw error;
+    }
   }
 
   @Get('/all')

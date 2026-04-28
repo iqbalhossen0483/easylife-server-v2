@@ -14,26 +14,26 @@ export class PurchaseProductItemDto {
   @IsNotEmpty({ message: 'Product id is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Product id must be a number' })
-  product_id: number;
+  product_id!: number;
 
   @ApiProperty({ example: 100 })
   @IsNotEmpty({ message: 'Quantity is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Quantity must be a number' })
   @Min(1, { message: 'Quantity must be at least 1' })
-  qty: number;
+  qty!: number;
 
   @ApiProperty({ example: 200 })
   @IsNotEmpty({ message: 'Price is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Price must be a number' })
-  price: number;
+  price!: number;
 
   @ApiProperty({ example: 20000 })
   @IsNotEmpty({ message: 'Total is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Total must be a number' })
-  total: number;
+  total!: number;
 }
 
 export class CreatePurchaseDto {
@@ -44,7 +44,7 @@ export class CreatePurchaseDto {
     { maxDecimalPlaces: 0 },
     { message: 'Supplier id must be a number' },
   )
-  supplier_id: number;
+  supplier_id!: number;
 
   @ApiProperty({ type: [PurchaseProductItemDto] })
   @IsArray({ message: 'Products must be an array' })
@@ -61,7 +61,7 @@ export class CreatePurchaseDto {
     return plainToInstance(PurchaseProductItemDto, value);
   })
   @Type(() => PurchaseProductItemDto)
-  products: PurchaseProductItemDto[];
+  products!: PurchaseProductItemDto[];
 
   @ApiProperty({ example: 20000 })
   @IsNotEmpty({ message: 'Total amount is required' })
@@ -70,7 +70,7 @@ export class CreatePurchaseDto {
     { maxDecimalPlaces: 2 },
     { message: 'Total amount must be a number' },
   )
-  total_amount: number;
+  total_amount!: number;
 
   @ApiPropertyOptional({ example: 15000 })
   @IsOptional()
@@ -95,7 +95,7 @@ export class PaySupplierDto {
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Amount must be a number' })
   @Min(1, { message: 'Amount must be at least 1' })
-  amount: number;
+  amount!: number;
 
   @ApiPropertyOptional({ example: 'Remaining balance paid' })
   @IsOptional()

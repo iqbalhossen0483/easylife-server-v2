@@ -138,7 +138,11 @@ export class PurchaseService {
 
       // Update product stock
       for (const item of payload.products) {
-        await productRepo.increment({ id: item.product_id }, 'stock', item.qty);
+        await productRepo.increment(
+          { id: item.product_id },
+          'current_stock',
+          item.qty,
+        );
         await productRepo.increment(
           { id: item.product_id },
           'purchased',
@@ -224,7 +228,7 @@ export class PurchaseService {
 
     const [purchases, total] = await purchaseRepo.findAndCount({
       where: query,
-      relations: { supplier: true, purchased_by: true, products: true },
+      relations: { supplier: true, purchased_by: true },
       select: {
         supplier: { id: true, name: true, phone: true },
         purchased_by: { id: true, name: true },
@@ -355,12 +359,22 @@ export class PurchaseService {
       relations: {
         supplier: true,
         purchased_by: true,
-        products: true,
+        products: {
+          product: true,
+        },
         payments: true,
       },
       select: {
         supplier: { id: true, name: true, phone: true },
         purchased_by: { id: true, name: true },
+        products: {
+          id: true,
+          price: true,
+          purchase: true,
+          qty: true,
+          total: true,
+          product: { id: true, name: true, price: true },
+        },
       },
     });
 

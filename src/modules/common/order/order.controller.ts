@@ -63,8 +63,11 @@ export class OrderController {
 
   @Role(Designation.ADMIN, Designation.SALES_MAN)
   @Put('/deliver/:id')
-  async deliver(@Param('id', ParseIntPipe) id: number) {
-    return this.orderService.deliverOrder(id);
+  async deliver(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() payload: { cashReceived: number },
+  ) {
+    return this.orderService.deliverOrder(id, payload.cashReceived);
   }
 
   @Role(Designation.ADMIN, Designation.SALES_MAN)
