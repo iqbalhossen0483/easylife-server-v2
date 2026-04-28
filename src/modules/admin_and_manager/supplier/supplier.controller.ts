@@ -3,6 +3,7 @@ import { Role } from '@/decorators/Role.decorators';
 import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
+import { deleteFile } from '@/utils/file.util';
 import {
   Body,
   Controller,
@@ -40,10 +41,15 @@ export class SupplierController {
     @Body() payload: CreateSupplierDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.profile = file.filename;
+    try {
+      if (file) {
+        payload.profile = file.filename;
+      }
+      return await this.supplierService.createSupplier(payload);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.supplierService.createSupplier(payload);
   }
 
   @Get('/all')
@@ -64,10 +70,15 @@ export class SupplierController {
     @Body() payload: UpdateSupplierDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.profile = file.filename;
+    try {
+      if (file) {
+        payload.profile = file.filename;
+      }
+      return await this.supplierService.updateSupplier(id, payload);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.supplierService.updateSupplier(id, payload);
   }
 
   @Delete('/delete/:id')

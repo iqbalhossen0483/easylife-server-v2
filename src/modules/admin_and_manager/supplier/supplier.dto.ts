@@ -6,12 +6,12 @@ export class CreateSupplierDto {
   @ApiProperty({ example: 'Global Coffee Traders' })
   @IsNotEmpty({ message: 'Supplier name is required' })
   @Length(3, 100, { message: 'Name must be between 3 and 100 characters' })
-  name: string;
+  name!: string;
 
   @ApiProperty({ example: '01812345678' })
   @IsNotEmpty({ message: 'Phone number is required' })
   @Length(11, 11, { message: 'Phone number must be 11 characters' })
-  phone: string;
+  phone!: string;
 
   @ApiPropertyOptional({ example: 'Gulshan-2, Dhaka' })
   @IsOptional()

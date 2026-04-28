@@ -3,6 +3,7 @@ import { Role } from '@/decorators/Role.decorators';
 import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
+import { deleteFile } from '@/utils/file.util';
 import {
   Body,
   Controller,
@@ -40,10 +41,15 @@ export class ProductController {
     @Body() payload: CreateProductDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.image = file.filename;
+    try {
+      if (file) {
+        payload.image = file.filename;
+      }
+      return await this.productService.createProduct(payload);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.productService.createProduct(payload);
   }
 
   @Role(Designation.STORE_MANAGER)
@@ -67,10 +73,15 @@ export class ProductController {
     @Body() payload: UpdateProductDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.image = file.filename;
+    try {
+      if (file) {
+        payload.image = file.filename;
+      }
+      return await this.productService.updateProduct(id, payload);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.productService.updateProduct(id, payload);
   }
 
   @Role(Designation.SUPER_ADMIN)
