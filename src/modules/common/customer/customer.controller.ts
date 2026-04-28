@@ -5,6 +5,7 @@ import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
 import type { JWT_Payload } from '@/types/common';
+import { deleteFile } from '@/utils/file.util';
 import {
   Body,
   Controller,
@@ -43,10 +44,15 @@ export class CustomerController {
     @CurrentUser() user: JWT_Payload,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.profile = file.filename;
+    try {
+      if (file) {
+        payload.profile = file.filename;
+      }
+      return await this.customerService.createCustomer(payload, user.sub);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.customerService.createCustomer(payload, user.sub);
   }
 
   @Role(Designation.ADMIN, Designation.SALES_MAN)
@@ -70,10 +76,15 @@ export class CustomerController {
     @Body() payload: UpdateCustomerDto,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    if (file) {
-      payload.profile = file.filename;
+    try {
+      if (file) {
+        payload.profile = file.filename;
+      }
+      return await this.customerService.updateCustomer(id, payload);
+    } catch (error) {
+      void deleteFile(file?.filename);
+      throw error;
     }
-    return this.customerService.updateCustomer(id, payload);
   }
 
   @Role(Designation.ADMIN)
