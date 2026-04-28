@@ -12,6 +12,7 @@ import {
 import { TransactionEntity } from '@/entites/transaction.entity';
 import { Designation, UserEntity } from '@/entites/user.entity';
 import { Injectable } from '@nestjs/common';
+import moment from 'moment';
 import { Between, FindOptionsWhere } from 'typeorm';
 
 @Injectable()
@@ -20,12 +21,8 @@ export class ReportService {
 
   async getDashboard(designation?: Designation) {
     const today = new Date();
-    const startOfDay = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-    );
-    const endOfDay = new Date(startOfDay.getTime() + 86400000 - 1);
+    const startOfDay = moment(today).startOf('day').toDate();
+    const endOfDay = moment(today).endOf('day').toDate();
 
     const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
     const customerRepo =
@@ -34,7 +31,10 @@ export class ReportService {
     const productRepo = await this.tenantDbService.getRepository(ProductEntity);
 
     const todayOrders = await orderRepo.find({
-      where: { created_at: Between(startOfDay, endOfDay) },
+      where: {
+        created_at: Between(startOfDay, endOfDay),
+        status: OrderStatus.DELIVERED,
+      },
     });
 
     const todaySale = todayOrders.reduce(
