@@ -75,7 +75,7 @@ export class OrderService {
       }
 
       // validate product duplication in the list
-      if (productSet.has(p.product_id)) {
+      if (productSet.has(p.product_id) && !p.is_free) {
         throw new BadRequestException(
           `Product #"${p.product_id}" is duplicated in the list`,
         );
@@ -126,6 +126,7 @@ export class OrderService {
       op.qty = p.qty;
       op.price = p.price;
       op.total = p.total;
+      op.is_free = p.is_free;
       return op;
     });
 
@@ -138,6 +139,10 @@ export class OrderService {
       status: OrderStatus.UNDELIVERED,
       products: orderProducts,
     });
+
+    if (orderProducts.some((p) => p.is_free)) {
+      order.status = OrderStatus.PENDING;
+    }
 
     await orderRepo.save(order);
 
@@ -290,9 +295,16 @@ export class OrderService {
         op.price = p.price;
         op.total = p.total;
         op.order = order;
+        op.is_free = p.is_free;
         return op;
       });
       await opRepo.save(newProducts);
+
+      if (newProducts.some((p) => p.is_free)) {
+        order.status = OrderStatus.PENDING;
+      } else {
+        order.status = OrderStatus.UNDELIVERED;
+      }
     }
 
     await orderRepo.save(order);
@@ -300,6 +312,7 @@ export class OrderService {
     return {
       success: true,
       message: 'Order updated successfully',
+      data: order,
     };
   }
 
@@ -331,6 +344,12 @@ export class OrderService {
 
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException('Order already delivered');
+      }
+
+      if (order.status === OrderStatus.PENDING) {
+        throw new BadRequestException(
+          'Order is still pending due to free products. Please update the order before delivering.',
+        );
       }
 
       if (Number(order.due) < totalReceived) {
@@ -675,6 +694,28 @@ export class OrderService {
       success: true,
       message: 'Collections fetched successfully',
       data: collections,
+    };
+  }
+
+  async approvePendingOrder(orderId: number) {
+    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
+    const order = await orderRepo.findOne({
+      where: { id: orderId },
+      relations: { products: true },
+    });
+    if (!order) throw new NotFoundException('Order not found');
+
+    if (order.status !== OrderStatus.PENDING) {
+      throw new BadRequestException('Only pending orders can be approved');
+    }
+
+    order.status = OrderStatus.UNDELIVERED;
+    await orderRepo.save(order);
+
+    return {
+      success: true,
+      message: 'Order approved successfully',
+      data: order,
     };
   }
 

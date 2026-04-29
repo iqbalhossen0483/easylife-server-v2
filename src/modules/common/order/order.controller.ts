@@ -94,6 +94,12 @@ export class OrderController {
     return this.orderService.deleteOrder(id);
   }
 
+  @Role(Designation.SUPER_ADMIN)
+  @Put('/approve-pending/:id')
+  async approvePending(@Param('id', ParseIntPipe) id: number) {
+    return this.orderService.approvePendingOrder(id);
+  }
+
   @Get('/my-collections')
   async myCollections(@CurrentUser() user: JWT_Payload) {
     return this.orderService.getMyCollections(user.sub);
