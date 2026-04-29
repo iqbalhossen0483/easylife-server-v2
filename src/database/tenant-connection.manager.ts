@@ -3,6 +3,7 @@ import { ExpenseCategoryEntity, ExpenseEntity } from '@/entites/expense.entity';
 import { NotesEntity } from '@/entites/notes.entity';
 import {
   CollectionEntity,
+  DiscountEntity,
   OrderEntity,
   OrderProductEntity,
 } from '@/entites/order.entity';
@@ -68,6 +69,7 @@ export const TENANT_ENTITIES = [
   DailyStockReportEntity,
   MonthlyStockReportEntity,
   YearlyStockReportEntity,
+  DiscountEntity,
 ];
 
 @Injectable()

@@ -133,3 +133,26 @@ export class CollectionEntity {
   @CreateDateColumn({ name: 'created_at' })
   created_at!: Date;
 }
+
+@Entity('discounts')
+export class DiscountEntity {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @ManyToOne(() => OrderEntity, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'order_id' })
+  order!: OrderEntity;
+
+  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'applied_by' })
+  applied_by!: UserEntity;
+
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
+  amount!: number;
+
+  @Column({ type: 'text', nullable: true })
+  reason!: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at!: Date;
+}

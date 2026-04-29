@@ -7,6 +7,7 @@ import {
 } from '@/entites/expense.entity';
 import {
   CollectionEntity,
+  DiscountEntity,
   OrderEntity,
   OrderProductEntity,
   OrderStatus,
@@ -23,7 +24,7 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { Between, EntityManager, FindOptionsWhere } from 'typeorm';
+import { Between, EntityManager, FindOptionsWhere, MoreThan } from 'typeorm';
 import {
   CollectPaymentDto,
   CreateOrderDto,
@@ -149,6 +150,7 @@ export class OrderService {
     status,
     start_date,
     end_date,
+    has_due,
   }: GetAllOrderDto) {
     const take = clampLimit(limit);
     const skip = (page - 1) * take;
@@ -164,6 +166,9 @@ export class OrderService {
         new Date(start_date),
         new Date(end_date + 'T23:59:59'),
       );
+    }
+    if (has_due) {
+      query.due = MoreThan(0);
     }
 
     const [orders, total] = await orderRepo.findAndCount({
@@ -582,6 +587,16 @@ export class OrderService {
           note: `Auto-created discount from order #${orderId}`,
         });
         await expenseRepo.save(expense);
+
+        // store discount amount in discount table
+        const discountRepo = qr.manager.getRepository(DiscountEntity);
+        const discount = discountRepo.create({
+          order,
+          amount: discountAmount,
+          applied_by: { id: currentUserId },
+          reason: payload.notes,
+        });
+        await discountRepo.save(discount);
       }
 
       await qr.commitTransaction();

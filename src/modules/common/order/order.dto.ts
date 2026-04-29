@@ -128,6 +128,12 @@ export class GetAllOrderDto {
   @ApiPropertyOptional({ example: '2026-04-30' })
   @IsOptional()
   end_date?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: 'Include products must be a boolean' })
+  has_due?: boolean;
 }
 
 export class CollectPaymentDto {
