@@ -474,12 +474,21 @@ export class OrderService {
         );
       }
 
-      // Discount cannot exceed 2% of order due
+      // Discount cannot exceed 1% of total sale
       if (discountAmount > 0) {
-        const maxDiscount = orderDue * 0.02;
+        if (orderDue < 0) {
+          throw new BadRequestException(
+            'Cannot apply discount to an order with no due amount',
+          );
+        } else if (orderDue > collectionAmount + discountAmount) {
+          throw new BadRequestException(
+            'Discount can only be applied to the amount being collected in this transaction',
+          );
+        }
+        const maxDiscount = order.total_sale * 0.01;
         if (discountAmount > maxDiscount) {
           throw new BadRequestException(
-            `Discount (${discountAmount}) exceeds maximum 2% of due (${maxDiscount.toFixed(2)})`,
+            `Discount (${discountAmount}) exceeds maximum 1% of total sale (${maxDiscount.toFixed(2)})`,
           );
         }
       }
@@ -506,7 +515,7 @@ export class OrderService {
       await customerRepo.increment(
         { id: order.shop.id },
         'collection',
-        collectionAmount,
+        collectionAmount + discountAmount,
       );
       if (discountAmount > 0) {
         await customerRepo.increment(
@@ -538,11 +547,6 @@ export class OrderService {
         collectionAmount,
         qr.manager,
       );
-      await this.reportService.updateCashReport(
-        'cash_in',
-        collectionAmount,
-        qr.manager,
-      );
 
       // Auto-create discount expense if applicable
       if (discountAmount > 0) {
@@ -555,23 +559,29 @@ export class OrderService {
           qr.manager.getRepository<ExpenseCategoryEntity>(
             ExpenseCategoryEntity,
           );
-        const discountCategory = await expenseCategoryRepo.findOne({
+        let discountCategory = await expenseCategoryRepo.findOne({
           where: { name: 'Discount' },
         });
-        if (discountCategory) {
-          const expenseRepo =
-            qr.manager.getRepository<ExpenseEntity>(ExpenseEntity);
-          const expense = expenseRepo.create({
-            type: discountCategory,
-            amount: discountAmount,
-            status: ExpenseStatus.APPROVED,
+        if (!discountCategory) {
+          discountCategory = expenseCategoryRepo.create({
+            name: 'Discount',
+            description: 'Auto-created category for order discounts',
             created_by: { id: currentUserId } as UserEntity,
-            approved_by: { id: currentUserId } as UserEntity,
-            approved_at: new Date(),
-            note: `Auto-created discount from order #${orderId}`,
           });
-          await expenseRepo.save(expense);
+          await expenseCategoryRepo.save(discountCategory);
         }
+        const expenseRepo =
+          qr.manager.getRepository<ExpenseEntity>(ExpenseEntity);
+        const expense = expenseRepo.create({
+          type: discountCategory,
+          amount: discountAmount,
+          status: ExpenseStatus.APPROVED,
+          created_by: { id: currentUserId } as UserEntity,
+          approved_by: { id: currentUserId } as UserEntity,
+          approved_at: new Date(),
+          note: `Auto-created discount from order #${orderId}`,
+        });
+        await expenseRepo.save(expense);
       }
 
       await qr.commitTransaction();
