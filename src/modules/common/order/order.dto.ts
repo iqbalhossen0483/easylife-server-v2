@@ -19,10 +19,6 @@ export class OrderProductItemDto {
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Product id must be a number' })
   product_id!: number;
 
-  @ApiProperty({ example: 'Arabica Coffee Beans' })
-  @IsNotEmpty({ message: 'Product name is required' })
-  product_name!: string;
-
   @ApiProperty({ example: 5 })
   @IsNotEmpty({ message: 'Quantity is required' })
   @Type(() => Number)
@@ -151,4 +147,16 @@ export class CollectPaymentDto {
   @ApiPropertyOptional({ example: 'Partial payment received' })
   @IsOptional()
   notes?: string;
+}
+
+export class DeliverOrderDto {
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    { message: 'Cash received must be a number' },
+  )
+  @Min(1, { message: 'Cash received must be at least 1' })
+  cash_received!: number;
 }

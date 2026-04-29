@@ -66,6 +66,9 @@ export class OrderEntity {
   @OneToMany(() => CollectionEntity, (c) => c.order)
   collections!: CollectionEntity[];
 
+  @Column({ name: 'delivered_at', type: 'timestamp', nullable: true })
+  delivered_at!: Date;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at!: Date;
 
@@ -90,10 +93,7 @@ export class OrderProductEntity {
   @Column({ name: 'product_id', type: 'int' })
   product_id!: number;
 
-  @Column({ name: 'product_name', type: 'varchar', length: 100 })
-  product_name!: string;
-
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })
   qty!: number;
 
   @Column({ type: 'decimal', precision: 12, scale: 2, default: 0 })

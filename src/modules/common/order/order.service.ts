@@ -63,14 +63,14 @@ export class OrderService {
       // If price is 0, it must be marked as free
       if (p.price === 0 && !p.is_free) {
         throw new BadRequestException(
-          `Product "${p.product_name}" price is 0 but not marked as free`,
+          `Product #"${p.product_id}" price is 0 but not marked as free`,
         );
       }
 
       // validate product duplication in the list
       if (productSet.has(p.product_id)) {
         throw new BadRequestException(
-          `Product "${p.product_name}" is duplicated in the list`,
+          `Product #"${p.product_id}" is duplicated in the list`,
         );
       }
       productSet.add(p.product_id);
@@ -79,7 +79,7 @@ export class OrderService {
       const expectedTotal = p.qty * p.price;
       if (Math.abs(expectedTotal - p.total) > 0.01) {
         throw new BadRequestException(
-          `Product "${p.product_name}" total (${p.total}) does not match qty(${p.qty}) × price(${p.price}) = ${expectedTotal}`,
+          `Product #"${p.product_id}" total (${p.total}) does not match qty(${p.qty}) × price(${p.price}) = ${expectedTotal}`,
         );
       }
     }
@@ -116,7 +116,6 @@ export class OrderService {
     const orderProducts = payload.products.map((p) => {
       const op = new OrderProductEntity();
       op.product_id = p.product_id;
-      op.product_name = p.product_name;
       op.qty = p.qty;
       op.price = p.price;
       op.total = p.total;
@@ -267,7 +266,6 @@ export class OrderService {
       const newProducts = payload.products.map((p) => {
         const op = new OrderProductEntity();
         op.product_id = p.product_id;
-        op.product_name = p.product_name;
         op.qty = p.qty;
         op.price = p.price;
         op.total = p.total;
@@ -285,7 +283,11 @@ export class OrderService {
     };
   }
 
-  async deliverOrder(orderId: number, cashReceived: number) {
+  async deliverOrder(
+    orderId: number,
+    currentUserId: number,
+    cashReceived: number,
+  ) {
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
     await qr.startTransaction();
@@ -307,8 +309,21 @@ export class OrderService {
         throw new BadRequestException('Order already delivered');
       }
 
+      if (order.due < cashReceived) {
+        throw new BadRequestException(
+          'cash received cannot exceed order due amount',
+        );
+      }
+
+      const advancePayment = Number(order.payment);
+
       // Mark as delivered
       order.status = OrderStatus.DELIVERED;
+      order.payment = advancePayment + cashReceived;
+      order.due = Number(order.due) - cashReceived;
+      order.delivered_at = new Date();
+      order.delivered_by = { id: currentUserId } as UserEntity;
+
       await orderRepo.save(order);
 
       // Update customer totals
@@ -358,11 +373,11 @@ export class OrderService {
           'due_sale',
           order.due,
         );
-        if (order.payment > 0) {
+        if (advancePayment > 0) {
           await userRepo.increment(
             { id: order.created_by.id },
             'have_money',
-            order.payment,
+            advancePayment,
           );
         }
         if (cashReceived > 0) {
@@ -388,13 +403,6 @@ export class OrderService {
         Number(order.due),
         qr.manager,
       );
-      if (Number(order.payment) > 0) {
-        await this.reportService.updateCashReport(
-          'cash_in',
-          Number(order.payment),
-          qr.manager,
-        );
-      }
 
       // Update stock reports per product
       for (const item of order.products) {

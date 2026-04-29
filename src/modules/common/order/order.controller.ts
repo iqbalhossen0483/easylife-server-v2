@@ -20,6 +20,7 @@ import { ApiTags } from '@nestjs/swagger';
 import {
   CollectPaymentDto,
   CreateOrderDto,
+  DeliverOrderDto,
   GetAllOrderDto,
   UpdateOrderDto,
 } from './order.dto';
@@ -65,9 +66,14 @@ export class OrderController {
   @Put('/deliver/:id')
   async deliver(
     @Param('id', ParseIntPipe) id: number,
-    @Body() payload: { cashReceived: number },
+    @Body() payload: DeliverOrderDto,
+    @CurrentUser() user: JWT_Payload,
   ) {
-    return this.orderService.deliverOrder(id, payload.cashReceived);
+    return this.orderService.deliverOrder(
+      id,
+      user.sub,
+      payload.cash_received || 0,
+    );
   }
 
   @Role(Designation.ADMIN, Designation.SALES_MAN)

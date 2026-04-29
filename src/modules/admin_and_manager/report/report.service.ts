@@ -19,73 +19,77 @@ import { Between, FindOptionsWhere } from 'typeorm';
 export class ReportService {
   constructor(private readonly tenantDbService: TenantDatabaseService) {}
 
-  async getDashboard(designation?: Designation) {
+  async getDashboard() {
     const today = new Date();
     const startOfDay = moment(today).startOf('day').toDate();
     const endOfDay = moment(today).endOf('day').toDate();
 
-    const orderRepo = await this.tenantDbService.getRepository(OrderEntity);
-    const customerRepo =
-      await this.tenantDbService.getRepository(CustomerEntity);
-    const userRepo = await this.tenantDbService.getRepository(UserEntity);
-    const productRepo = await this.tenantDbService.getRepository(ProductEntity);
+    const [orderRepo, customerRepo, userRepo, productRepo] = await Promise.all([
+      this.tenantDbService.getRepository(OrderEntity),
+      this.tenantDbService.getRepository(CustomerEntity),
+      this.tenantDbService.getRepository(UserEntity),
+      this.tenantDbService.getRepository(ProductEntity),
+    ]);
 
     const todayOrders = await orderRepo.find({
       where: {
-        created_at: Between(startOfDay, endOfDay),
+        delivered_at: Between(startOfDay, endOfDay),
         status: OrderStatus.DELIVERED,
       },
     });
 
-    const todaySale = todayOrders.reduce(
-      (sum, o) => sum + Number(o.total_sale),
-      0,
-    );
-    const todayCollection = todayOrders.reduce(
-      (sum, o) => sum + Number(o.payment),
-      0,
-    );
-    const todayDue = todayOrders.reduce((sum, o) => sum + Number(o.due), 0);
+    let todayTotalSale = 0;
+    let todayCashSale = 0;
+    let todayDueSale = 0;
 
-    const undeliveredCount = await orderRepo.count({
-      where: { status: OrderStatus.UNDELIVERED },
-    });
-
-    const totalCustomers = await customerRepo.count();
-    const totalUsers = await userRepo.count();
-    const totalProducts = await productRepo.count();
-
-    // Admin: include last 2 months cash report summary
-    let recentCashReports: DailyCashReportEntity[] = [];
-    if (designation === Designation.ADMIN) {
-      const twoMonthsAgo = new Date();
-      twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-      const dailyRepo = await this.tenantDbService.getRepository(
-        DailyCashReportEntity,
-      );
-      recentCashReports = await dailyRepo.find({
-        where: { date: Between(twoMonthsAgo, today) },
-        order: { date: 'DESC' },
-      });
+    for (const o of todayOrders) {
+      todayTotalSale += Number(o.total_sale);
+      todayCashSale += Number(o.payment);
+      todayDueSale += Number(o.due);
     }
+
+    // total reports
+    const [
+      undeliveredCount,
+      totalOrders,
+      totalDelivered,
+      totalPending,
+      totalCustomers,
+      totalUsers,
+      totalProducts,
+    ] = await Promise.all([
+      orderRepo.count({
+        where: { status: OrderStatus.UNDELIVERED },
+      }),
+      orderRepo.count(),
+      orderRepo.count({
+        where: { status: OrderStatus.DELIVERED },
+      }),
+      orderRepo.count({
+        where: { status: OrderStatus.PENDING },
+      }),
+      customerRepo.count(),
+      userRepo.count(),
+      productRepo.count(),
+    ]);
 
     return {
       success: true,
       message: 'Dashboard data fetched',
       data: {
         today: {
-          total_sale: todaySale,
-          collection: todayCollection,
-          due: todayDue,
-          orders: todayOrders.length,
+          total_sale: todayTotalSale,
+          cash_sale: todayCashSale,
+          due_sale: todayDueSale,
+          total_orders: todayOrders.length,
         },
         undelivered_orders: undeliveredCount,
+        total_orders: totalOrders,
+        total_delivered: totalDelivered,
+        total_pending: totalPending,
         total_customers: totalCustomers,
         total_users: totalUsers,
         total_products: totalProducts,
-        ...(designation === Designation.ADMIN
-          ? { recent_cash_reports: recentCashReports }
-          : {}),
       },
     };
   }
@@ -341,7 +345,6 @@ export class ReportService {
       string,
       {
         product_id: number;
-        product_name: string;
         total_qty: number;
         total_amount: number;
       }
@@ -353,7 +356,6 @@ export class ReportService {
         if (!productSales[key]) {
           productSales[key] = {
             product_id: item.product_id,
-            product_name: item.product_name,
             total_qty: 0,
             total_amount: 0,
           };

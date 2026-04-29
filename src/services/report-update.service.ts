@@ -147,16 +147,19 @@ export class ReportUpdateService {
     remainingStock: number,
     manager?: EntityManager,
   ) {
+    soldQty = Number(soldQty);
+    purchasedQty = Number(purchasedQty);
+    remainingStock = Number(remainingStock);
+
     const mgr = manager ?? (await this.getManager());
-    const now = new Date();
-    const dateStr = now.toISOString().split('T')[0];
-    const month = now.getMonth() + 1;
-    const year = now.getFullYear();
+    const today = new Date();
+    const month = today.getMonth() + 1;
+    const year = today.getFullYear();
 
     // --- Daily ---
     const dailyRepo = mgr.getRepository(DailyStockReportEntity);
     let daily = await dailyRepo.findOne({
-      where: { date: new Date(dateStr), product: { id: productId } },
+      where: { date: today, product: { id: productId } },
     });
 
     if (!daily) {
@@ -170,7 +173,7 @@ export class ReportUpdateService {
         : remainingStock + soldQty - purchasedQty;
 
       daily = dailyRepo.create({
-        date: new Date(dateStr),
+        date: today,
         product: { id: productId },
         previous_stock: previousStock,
         total_sold: 0,
@@ -179,8 +182,8 @@ export class ReportUpdateService {
       });
     }
 
-    daily.total_sold = daily.total_sold + soldQty;
-    daily.purchased = daily.purchased + purchasedQty;
+    daily.total_sold = Number(daily.total_sold) + soldQty;
+    daily.purchased = Number(daily.purchased) + purchasedQty;
     daily.remaining_stock = remainingStock;
     await dailyRepo.save(daily);
 
@@ -210,8 +213,8 @@ export class ReportUpdateService {
       });
     }
 
-    monthly.total_sold = monthly.total_sold + soldQty;
-    monthly.purchased = monthly.purchased + purchasedQty;
+    monthly.total_sold = Number(monthly.total_sold) + soldQty;
+    monthly.purchased = Number(monthly.purchased) + purchasedQty;
     monthly.remaining_stock = remainingStock;
     await monthlyRepo.save(monthly);
 
@@ -240,8 +243,8 @@ export class ReportUpdateService {
       });
     }
 
-    yearly.total_sold = yearly.total_sold + soldQty;
-    yearly.purchased = yearly.purchased + purchasedQty;
+    yearly.total_sold = Number(yearly.total_sold) + soldQty;
+    yearly.purchased = Number(yearly.purchased) + purchasedQty;
     yearly.remaining_stock = remainingStock;
     await yearlyRepo.save(yearly);
   }

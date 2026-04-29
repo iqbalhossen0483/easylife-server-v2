@@ -4,13 +4,7 @@ import { Designation } from '@/entites/user.entity';
 import { AuthGaurd } from '@/guards/AuthGaurd';
 import { RoleGaurd } from '@/guards/RoleGaurd';
 import type { JWT_Payload } from '@/types/common';
-import {
-  Controller,
-  Get,
-  ParseIntPipe,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ReportService } from './report.service';
 
@@ -22,8 +16,8 @@ export class ReportController {
 
   @Role(Designation.ADMIN)
   @Get('/')
-  async getDashboard(@CurrentUser() user: JWT_Payload) {
-    return this.reportService.getDashboard(user.designation);
+  async getDashboard() {
+    return this.reportService.getDashboard();
   }
 
   @Role(Designation.ADMIN)
@@ -75,7 +69,7 @@ export class ReportController {
   @Get('/stock-report')
   async getStockReport(
     @Query('date') date?: string,
-    @Query('product_id', ParseIntPipe) product_id?: number,
+    @Query('product_id') product_id?: number,
   ) {
     return this.reportService.getStockReport(date, product_id);
   }
