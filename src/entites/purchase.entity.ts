@@ -104,6 +104,9 @@ export class PurchaseCollectionEntity {
   @Column({ type: 'text', nullable: true })
   notes!: string;
 
+  @Column({ type: 'text', nullable: true })
+  file!: string | null;
+
   @CreateDateColumn({ name: 'created_at' })
   created_at!: Date;
 }

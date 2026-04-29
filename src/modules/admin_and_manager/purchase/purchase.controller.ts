@@ -1,4 +1,4 @@
-import { multiFileMulterConfig } from '@/configs/multer.config';
+import { multerConfig, multiFileMulterConfig } from '@/configs/multer.config';
 import { CurrentUser } from '@/decorators/currentUser';
 import { Role } from '@/decorators/Role.decorators';
 import { Designation } from '@/entites/user.entity';
@@ -15,11 +15,12 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FilesInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiTags } from '@nestjs/swagger';
 import {
   CreatePurchaseDto,
@@ -67,11 +68,20 @@ export class PurchaseController {
   }
 
   @Put('/pay/:id')
+  @UseInterceptors(FileInterceptor('file', multerConfig))
+  @ApiConsumes('multipart/form-data')
   async paySupplier(
     @Param('id', ParseIntPipe) id: number,
     @Body() payload: PaySupplierDto,
     @CurrentUser() user: JWT_Payload,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.purchaseService.paySupplier(id, payload, user.sub);
+    try {
+      if (file) payload.file = file.filename;
+      return await this.purchaseService.paySupplier(id, payload, user.sub);
+    } catch (error) {
+      if (file) void deleteFile(file.filename);
+      throw error;
+    }
   }
 }

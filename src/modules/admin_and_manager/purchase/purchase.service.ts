@@ -15,7 +15,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, MoreThan } from 'typeorm';
 import {
   CreatePurchaseDto,
   GetAllPurchaseDto,
@@ -217,6 +217,7 @@ export class PurchaseService {
     page = 1,
     limit = 10,
     supplier_id,
+    has_due,
   }: GetAllPurchaseDto) {
     limit = clampLimit(limit);
     const skip = (page - 1) * limit;
@@ -225,6 +226,7 @@ export class PurchaseService {
 
     const query: FindOptionsWhere<PurchaseEntity> = {};
     if (supplier_id) query.supplier = { id: supplier_id };
+    if (has_due) query.due = MoreThan(0);
 
     const [purchases, total] = await purchaseRepo.findAndCount({
       where: query,
@@ -267,7 +269,9 @@ export class PurchaseService {
     if (!purchase) throw new NotFoundException('Purchase not found');
 
     if (payload.amount > purchase.due) {
-      throw new BadRequestException('Amount exceeds remaining due');
+      throw new BadRequestException(
+        `Payment amount cannot be greater than due amount (${purchase.due})`,
+      );
     }
 
     if (payload.amount <= 0) {
@@ -293,6 +297,7 @@ export class PurchaseService {
         sender: { id: currentUserId } as UserEntity,
         amount: payload.amount,
         notes: payload.notes,
+        file: payload.file,
       });
       await pcRepo.save(collection);
 

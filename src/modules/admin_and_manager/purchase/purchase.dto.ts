@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { plainToInstance, Transform, Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -100,6 +101,10 @@ export class PaySupplierDto {
   @ApiPropertyOptional({ example: 'Remaining balance paid' })
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({ type: 'string' })
+  @IsOptional()
+  file?: string;
 }
 
 export class GetAllPurchaseDto {
@@ -123,4 +128,10 @@ export class GetAllPurchaseDto {
     { message: 'Supplier id must be a number' },
   )
   supplier_id?: number;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: 'Has due must be a boolean' })
+  has_due?: boolean;
 }
