@@ -24,7 +24,13 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
-import { Between, EntityManager, FindOptionsWhere, MoreThan } from 'typeorm';
+import {
+  Between,
+  EntityManager,
+  FindOptionsWhere,
+  MoreThan,
+  QueryRunner,
+} from 'typeorm';
 import {
   CollectPaymentDto,
   CreateOrderDto,
@@ -254,9 +260,18 @@ export class OrderService {
 
     const total_sale = payload.total_sale ?? order.total_sale;
     const payment = payload.payment ?? order.payment;
+    const products =
+      payload.products ??
+      order.products.map((p) => ({
+        product_id: p.product_id,
+        qty: p.qty,
+        price: p.price,
+        total: p.total,
+        is_free: p.is_free,
+      }));
     const due = total_sale - payment;
 
-    await this.orderValidation(payload.products ?? [], total_sale, payment);
+    await this.orderValidation(products, total_sale, payment);
 
     order.total_sale = total_sale;
     order.payment = payment;
@@ -292,12 +307,16 @@ export class OrderService {
     orderId: number,
     currentUserId: number,
     cashReceived: number,
+    discount: number,
+    notes: string | undefined,
   ) {
     const qr = await this.tenantDbService.createQueryRunner();
     await qr.connect();
     await qr.startTransaction();
 
     try {
+      const totalReceived = cashReceived + discount;
+
       const orderRepo = qr.manager.getRepository(OrderEntity);
       const order = await orderRepo.findOne({
         where: { id: orderId },
@@ -314,9 +333,21 @@ export class OrderService {
         throw new BadRequestException('Order already delivered');
       }
 
-      if (order.due < cashReceived) {
+      if (Number(order.due) < totalReceived) {
         throw new BadRequestException(
-          'cash received cannot exceed order due amount',
+          `Total received (${totalReceived}) exceeds remaining due (${order.due})`,
+        );
+      }
+
+      if (discount && Number(order.due) > totalReceived) {
+        throw new BadRequestException(
+          `Can only apply discount to the amount being collected in this transaction`,
+        );
+      }
+
+      if (discount && discount > Number(order.total_sale) * 0.01) {
+        throw new BadRequestException(
+          `Discount (${discount}) exceeds maximum 1% of total sale (${(Number(order.total_sale) * 0.01).toFixed(2)})`,
         );
       }
 
@@ -325,9 +356,10 @@ export class OrderService {
       // Mark as delivered
       order.status = OrderStatus.DELIVERED;
       order.payment = advancePayment + cashReceived;
-      order.due = Number(order.due) - cashReceived;
+      order.due = Number(order.due) - totalReceived;
       order.delivered_at = new Date();
       order.delivered_by = { id: currentUserId } as UserEntity;
+      order.discount = discount;
 
       await orderRepo.save(order);
 
@@ -395,7 +427,7 @@ export class OrderService {
       }
 
       // Update sales targets
-      await this.updateSalesTargets(order, qr.manager);
+      await this.updateSalesTargets(order, discount, qr.manager);
 
       // Update cash reports
       await this.reportService.updateCashReport(
@@ -408,6 +440,18 @@ export class OrderService {
         Number(order.due),
         qr.manager,
       );
+
+      // Auto-create discount expense if applicable
+      if (discount > 0) {
+        await this.updateDiscountToExpense(
+          qr,
+          orderId,
+          discount,
+          currentUserId,
+          order,
+          notes,
+        );
+      }
 
       // Update stock reports per product
       for (const item of order.products) {
@@ -555,48 +599,14 @@ export class OrderService {
 
       // Auto-create discount expense if applicable
       if (discountAmount > 0) {
-        await this.reportService.updateCashReport(
-          'expense',
+        await this.updateDiscountToExpense(
+          qr,
+          orderId,
           discountAmount,
-          qr.manager,
-        );
-        const expenseCategoryRepo =
-          qr.manager.getRepository<ExpenseCategoryEntity>(
-            ExpenseCategoryEntity,
-          );
-        let discountCategory = await expenseCategoryRepo.findOne({
-          where: { name: 'Discount' },
-        });
-        if (!discountCategory) {
-          discountCategory = expenseCategoryRepo.create({
-            name: 'Discount',
-            description: 'Auto-created category for order discounts',
-            created_by: { id: currentUserId } as UserEntity,
-          });
-          await expenseCategoryRepo.save(discountCategory);
-        }
-        const expenseRepo =
-          qr.manager.getRepository<ExpenseEntity>(ExpenseEntity);
-        const expense = expenseRepo.create({
-          type: discountCategory,
-          amount: discountAmount,
-          status: ExpenseStatus.APPROVED,
-          created_by: { id: currentUserId } as UserEntity,
-          approved_by: { id: currentUserId } as UserEntity,
-          approved_at: new Date(),
-          note: `Auto-created discount from order #${orderId}`,
-        });
-        await expenseRepo.save(expense);
-
-        // store discount amount in discount table
-        const discountRepo = qr.manager.getRepository(DiscountEntity);
-        const discount = discountRepo.create({
+          currentUserId,
           order,
-          amount: discountAmount,
-          applied_by: { id: currentUserId },
-          reason: payload.notes,
-        });
-        await discountRepo.save(discount);
+          payload.notes,
+        );
       }
 
       await qr.commitTransaction();
@@ -670,9 +680,13 @@ export class OrderService {
 
   // --- Private helpers ---
 
-  private async updateSalesTargets(order: OrderEntity, manager: EntityManager) {
+  private async updateSalesTargets(
+    order: OrderEntity,
+    discount: number,
+    manager: EntityManager,
+  ) {
     const targetRepo = manager.getRepository(Target);
-    const totalSale = Number(order.total_sale);
+    const totalSale = Number(order.total_sale) - discount;
 
     // Apply customer commission percentage to determine achievable amount
     // e.g. commission=60 means 60% of total_sale counts toward target
@@ -691,5 +705,55 @@ export class OrderService {
       target.achived_amnt = Number(target.achived_amnt) + achievableAmount;
       await targetRepo.save(target);
     }
+  }
+
+  private async updateDiscountToExpense(
+    qr: QueryRunner,
+    orderId: number,
+    discountAmount: number,
+    currentUserId: number,
+    order: OrderEntity,
+    notes: string | undefined,
+  ) {
+    await this.reportService.updateCashReport(
+      'expense',
+      discountAmount,
+      qr.manager,
+    );
+    const expenseCategoryRepo = qr.manager.getRepository<ExpenseCategoryEntity>(
+      ExpenseCategoryEntity,
+    );
+    let discountCategory = await expenseCategoryRepo.findOne({
+      where: { name: 'Discount' },
+    });
+    if (!discountCategory) {
+      discountCategory = expenseCategoryRepo.create({
+        name: 'Discount',
+        description: 'Auto-created category for order discounts',
+        created_by: { id: currentUserId } as UserEntity,
+      });
+      await expenseCategoryRepo.save(discountCategory);
+    }
+    const expenseRepo = qr.manager.getRepository<ExpenseEntity>(ExpenseEntity);
+    const expense = expenseRepo.create({
+      type: discountCategory,
+      amount: discountAmount,
+      status: ExpenseStatus.APPROVED,
+      created_by: { id: currentUserId } as UserEntity,
+      approved_by: { id: currentUserId } as UserEntity,
+      approved_at: new Date(),
+      note: `Auto-created discount from order #${orderId}`,
+    });
+    await expenseRepo.save(expense);
+
+    // store discount amount in discount table
+    const discountRepo = qr.manager.getRepository(DiscountEntity);
+    const discount = discountRepo.create({
+      order,
+      amount: discountAmount,
+      applied_by: { id: currentUserId },
+      reason: notes,
+    });
+    await discountRepo.save(discount);
   }
 }

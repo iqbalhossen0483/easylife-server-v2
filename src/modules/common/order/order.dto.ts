@@ -165,4 +165,14 @@ export class DeliverOrderDto {
   )
   @Min(1, { message: 'Cash received must be at least 1' })
   cash_received!: number;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Discount must be a number' })
+  discount?: number;
+
+  @ApiPropertyOptional({ example: 'Delivered by John Doe' })
+  @IsOptional()
+  notes?: string;
 }

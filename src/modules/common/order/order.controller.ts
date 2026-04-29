@@ -73,6 +73,8 @@ export class OrderController {
       id,
       user.sub,
       payload.cash_received || 0,
+      payload.discount || 0,
+      payload.notes,
     );
   }
 
@@ -92,7 +94,6 @@ export class OrderController {
     return this.orderService.deleteOrder(id);
   }
 
-  @Role(Designation.ADMIN, Designation.SALES_MAN)
   @Get('/my-collections')
   async myCollections(@CurrentUser() user: JWT_Payload) {
     return this.orderService.getMyCollections(user.sub);
