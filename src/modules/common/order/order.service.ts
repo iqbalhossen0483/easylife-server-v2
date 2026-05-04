@@ -24,6 +24,7 @@ import {
   NotFoundException,
   NotImplementedException,
 } from '@nestjs/common';
+import moment from 'moment';
 import {
   Between,
   EntityManager,
@@ -173,10 +174,9 @@ export class OrderService {
     if (user_id) query.delivered_by = { id: user_id };
     if (status) query.status = status;
     if (start_date && end_date) {
-      query.created_at = Between(
-        new Date(start_date),
-        new Date(end_date + 'T23:59:59'),
-      );
+      const start = moment(start_date).startOf('day');
+      const end = moment(end_date).endOf('day');
+      query.created_at = Between(start.toDate(), end.toDate());
     }
     if (has_due) {
       query.due = MoreThan(0);
