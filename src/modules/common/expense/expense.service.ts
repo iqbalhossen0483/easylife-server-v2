@@ -13,8 +13,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Between, FindOptionsWhere } from 'typeorm';
-import { CreateExpenseDto, GetAllExpenseDto } from './expense.dto';
+import { Between, FindOptionsWhere, Like } from 'typeorm';
+import {
+  CreateExpenseDto,
+  GetAllExpenseDto,
+  GetExpenseTypesDto,
+} from './expense.dto';
 
 @Injectable()
 export class ExpenseService {
@@ -66,7 +70,6 @@ export class ExpenseService {
         payload.amount,
       );
       await this.reportService.updateCashReport('expense', payload.amount);
-      await this.reportService.updateCashReport('payment', payload.amount);
     }
 
     return {
@@ -198,6 +201,47 @@ export class ExpenseService {
       message: 'Expenses fetched successfully',
       data: expenses,
       meta,
+    };
+  }
+
+  async getSingleExpense(expenseId: number) {
+    const expenseRepo = await this.tenantDbService.getRepository(ExpenseEntity);
+
+    const expense = await expenseRepo.findOne({
+      where: { id: expenseId },
+      relations: { type: true, created_by: true, approved_by: true },
+      select: {
+        type: { id: true, name: true },
+        created_by: { id: true, name: true },
+        approved_by: { id: true, name: true },
+      },
+    });
+    if (!expense) throw new NotFoundException('Expense not found');
+
+    return {
+      success: true,
+      message: 'Expense fetched successfully',
+      data: expense,
+    };
+  }
+
+  async getAllExpenseCategories(payload: GetExpenseTypesDto) {
+    const categoryRepo = await this.tenantDbService.getRepository(
+      ExpenseCategoryEntity,
+    );
+    const query: FindOptionsWhere<ExpenseCategoryEntity> = {};
+    if (payload.search) {
+      query.name = Like(`%${payload.search}%`);
+    }
+    const categories = await categoryRepo.find({
+      where: query,
+      order: { name: 'ASC' },
+    });
+
+    return {
+      success: true,
+      message: 'Expense categories fetched successfully',
+      data: categories,
     };
   }
 }

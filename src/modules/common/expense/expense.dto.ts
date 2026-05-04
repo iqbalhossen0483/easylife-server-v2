@@ -8,14 +8,14 @@ export class CreateExpenseDto {
   @IsNotEmpty({ message: 'Expense type id is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 0 }, { message: 'Type id must be a number' })
-  type_id: number;
+  type_id!: number;
 
   @ApiProperty({ example: 5000 })
   @IsNotEmpty({ message: 'Amount is required' })
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 }, { message: 'Amount must be a number' })
   @Min(1, { message: 'Amount must be at least 1' })
-  amount: number;
+  amount!: number;
 
   @ApiPropertyOptional({ example: 'Office rent for April' })
   @IsOptional()
@@ -53,4 +53,10 @@ export class GetAllExpenseDto {
   @ApiPropertyOptional({ example: '2026-04-30' })
   @IsOptional()
   end_date?: string;
+}
+
+export class GetExpenseTypesDto {
+  @ApiPropertyOptional({ example: '' })
+  @IsOptional()
+  search?: string;
 }

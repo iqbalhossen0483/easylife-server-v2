@@ -73,9 +73,4 @@ export class UsersController {
   async delete(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.softDeleteUser(id);
   }
-
-  @Get('/recent-activity/:id')
-  async recentActivity(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.getRecentActivity(id);
-  }
 }

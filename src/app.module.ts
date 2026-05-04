@@ -14,18 +14,19 @@ import { ExpenseCategoryModule } from './modules/admin_and_manager/expense_categ
 import { ProductModule } from './modules/admin_and_manager/product/product.module';
 import { ProductionModule } from './modules/admin_and_manager/production/production.module';
 import { PurchaseModule } from './modules/admin_and_manager/purchase/purchase.module';
-import { SupplierModule } from './modules/admin_and_manager/supplier/supplier.module';
 import { ReportModule } from './modules/admin_and_manager/report/report.module';
+import { SupplierModule } from './modules/admin_and_manager/supplier/supplier.module';
 import { TargetModule } from './modules/admin_and_manager/targets/target.module';
+import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
 import { UsersModule } from './modules/admin_and_manager/user/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CustomerModule } from './modules/common/customer/customer.module';
 import { ExpenseModule } from './modules/common/expense/expense.module';
 import { NoteModule } from './modules/common/notes/notes.module';
-import { OrderModule } from './modules/common/order/order.module';
-import { TenantModule } from './modules/admin_and_manager/tenant/tenant.module';
 import { NotificationModule } from './modules/common/notification/notification.module';
+import { OrderModule } from './modules/common/order/order.module';
 import { TransactionModule } from './modules/common/transaction/transaction.module';
+import { UserSelfModule } from './modules/common/user/user_self.module';
 import { ScheduledTasksModule } from './modules/scheduled/scheduled-tasks.module';
 
 @Module({
@@ -40,6 +41,7 @@ import { ScheduledTasksModule } from './modules/scheduled/scheduled-tasks.module
     AuthModule,
     ExpenseCategoryModule,
     UsersModule,
+    UserSelfModule,
     TargetModule,
     ProductModule,
     SupplierModule,
