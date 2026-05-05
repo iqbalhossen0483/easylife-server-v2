@@ -7,11 +7,11 @@ import type { JWT_Payload } from '@/types/common';
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -64,7 +64,7 @@ export class ExpenseController {
   }
 
   @Role(Designation.ADMIN)
-  @Delete('/reject/:id')
+  @Put('/reject/:id')
   async reject(@Param('id', ParseIntPipe) id: number) {
     return this.expenseService.rejectExpense(id);
   }

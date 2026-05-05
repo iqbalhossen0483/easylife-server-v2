@@ -116,11 +116,6 @@ export class ExpenseService {
         expense.amount,
         qr.manager,
       );
-      await this.reportService.updateCashReport(
-        'payment',
-        expense.amount,
-        qr.manager,
-      );
 
       await qr.commitTransaction();
 
@@ -146,7 +141,9 @@ export class ExpenseService {
       throw new BadRequestException('Expense is not pending');
     }
 
-    await expenseRepo.softDelete({ id: expenseId });
+    expense.status = ExpenseStatus.REJECTED;
+
+    await expenseRepo.save(expense);
 
     return {
       success: true,
