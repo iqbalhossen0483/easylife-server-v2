@@ -66,6 +66,6 @@ import { ScheduledTasksModule } from './modules/scheduled/scheduled-tasks.module
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(ApiValidationPipe).forRoutes('*');
+    consumer.apply(ApiValidationPipe).forRoutes('*path');
   }
 }
