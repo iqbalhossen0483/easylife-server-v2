@@ -34,8 +34,8 @@ export class TenantDatabaseService {
       throw new UnauthorizedException('Authentication failed');
     }
 
-    this.cachedDbName = database.name;
-    return database.name;
+    this.cachedDbName = database.db_name;
+    return database.db_name;
   }
 
   async getRepository<T extends ObjectLiteral>(

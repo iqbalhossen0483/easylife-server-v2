@@ -6,7 +6,7 @@ export class DbListEntity {
   id!: number;
 
   @Column({ type: 'varchar', length: 40, unique: true })
-  name!: string;
+  db_name!: string;
 
   @Column({ type: 'varchar', length: 50 })
   title!: string;

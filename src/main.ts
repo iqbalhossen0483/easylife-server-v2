@@ -1,28 +1,33 @@
-import type { LoggerService } from '@nestjs/common';
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonModule } from 'nest-winston';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { setupSwagger } from './configs/swagger.config';
+import { winstonConfig } from './configs/winston.config';
 import { AllExceptionFilter } from './middleware/exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  /** Logger
+   * Create the logger up front so bootstrap-phase errors (e.g. TypeORM
+   * connection/synchronize failures) are captured by Winston too, not just
+   * errors raised after the app has finished initializing.
+   */
+  const logger = WinstonModule.createLogger(winstonConfig);
+
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger,
+  });
   const configService = app.get(ConfigService);
   const isProd = configService.get('NODE_ENV') === 'production';
   const apiPrefix = configService.get<string>('API_PREFIX') ?? '/api';
   const port = configService.get<string>('PORT') ?? '3000';
   const origins =
     configService.get<string>('CORS_ORIGINS') ?? 'http://localhost:3000';
-
-  // Winston logger
-  const logger = app.get<LoggerService>(WINSTON_MODULE_NEST_PROVIDER);
-  app.useLogger(logger);
 
   app.setGlobalPrefix(apiPrefix);
   app.enableCors({

@@ -40,15 +40,15 @@ export class ScheduledTasksService {
 
       for (const tenant of tenants) {
         try {
-          await this.createDailyCashReport(tenant.name);
-          await this.processExpiredTargets(tenant.name);
+          await this.createDailyCashReport(tenant.db_name);
+          await this.processExpiredTargets(tenant.db_name);
           this.logger.log(
-            `Daily tasks completed for tenant: ${tenant.name}`,
+            `Daily tasks completed for tenant: ${tenant.db_name}`,
             'CronJob',
           );
         } catch (err) {
           this.logger.error(
-            `Daily task failed for tenant ${tenant.name}`,
+            `Daily task failed for tenant ${tenant.db_name}`,
             err instanceof Error ? err.stack : String(err),
             'CronJob',
           );
@@ -76,7 +76,7 @@ export class ScheduledTasksService {
     if (existing) return;
 
     // Get yesterday's closing as today's opening
-    const yesterday = new Date(today);
+    const yesterday = today;
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
 
